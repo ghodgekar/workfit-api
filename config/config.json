@@ -1,0 +1,21 @@
+{
+    "port":8000,
+    "database":{
+        "host": "localhost",
+        "user": "root",
+        "password": "password",
+        "database": "workfitt",
+        "port": ""
+    },
+    "smtp":{
+        "service": "gmail",
+        "auth": {
+            "user": "",
+            "pass": ""
+        }
+    },
+    "template":{
+        "prescription_email":"prescription_email"
+    },
+    "url":"http://localhost:8000"
+}
