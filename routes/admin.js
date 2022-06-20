@@ -3,58 +3,9 @@ const router=express.Router();
 const db = require('../config/dbconnection');
 const { body } = require('express-validator');
 
-let adminController = require("../controllers/admin");
+let adminController = require("../controllers/admin.controller");
 
-router.post("/signup",[
-    body('admin_username').not().isEmpty().withMessage('Username invalid.').custom(async (value,{req}) => {
-        let isExist = await checkDuplicate('mst_admin','admin_username',value);
-        if(isExist){
-            throw new Error('User Name already exist!');
-        }
-        return true;
-    }),
-    body('admin_password').not().isEmpty().trim().isLength({min:4}).withMessage('Password invalid.'),
-    body('admin_email').isEmail().withMessage('Email invalid.'),
-    body('admin_name').not().isEmpty().withMessage('Name invalid.'),
-    body('isActive').not().isEmpty().withMessage('Status invalid.').custom(async (value,{req}) => {
-        if(value != 1 && value != 0){
-            throw new Error('Status should be 1 or 0.');
-        }
-        return true;
-    })
-],adminController.signup);
 
-router.post("/login",[
-    body('admin_username').not().isEmpty().withMessage('Username invalid.'),
-    body('admin_password').not().isEmpty().withMessage('Password invalid.')
-],adminController.login);
-
-router.post("/addVideo",[
-    body('video_link').not().isEmpty().isURL().withMessage('Link invalid.'),
-    body('video_name').not().isEmpty().withMessage('Name invalid.'),
-    body('isActive').not().isEmpty().withMessage('Status invalid.').custom(async (value,{req}) => {
-        if(value != 1 && value != 0){
-            throw new Error('Status should be 1 or 0.');
-        }
-        return true;
-    })
-],adminController.addVideo);
-
-router.post("/addBodyPart",[
-    body('body_part_name').not().isEmpty().withMessage('Name invalid.').custom(async (value,{req}) => {
-        let isExist = await checkDuplicate('mst_body_part','body_part_name',value);
-        if(isExist){
-            throw new Error('Body part already exist!');
-        }
-        return true;
-    }),
-    body('isActive').not().isEmpty().withMessage('Status invalid.').custom(async (value,{req}) => {
-        if(value != 1 && value != 0){
-            throw new Error('Status should be 1 or 0.');
-        }
-        return true;
-    })
-],adminController.addBodyPart);
 
 router.post("/exerciseArr",[
     body('body_part_name').not().isEmpty().withMessage('Name invalid.')
@@ -88,11 +39,6 @@ router.post("/updateEmailTemp",[
     })
 ],adminController.updateEmailTemp);
 
-router.get("/list",adminController.adminList);
-
-router.get("/videoList",adminController.videoList);
-
-router.get("/bodyPartList",adminController.bodyPartList);
 
 router.get("/emailTempList",adminController.emailTempList);
 
