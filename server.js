@@ -10,9 +10,10 @@ app.use(function (req,res,next) {
     next();
 });
 
+const PORT = process.env.PORT || 8080;
 // app.use("/",routes);
 app.get('/', (req, res) => {
     res.send('Hello World, from express');
 });
 
-app.listen(port,()=>{ console.log("App Running On Port "+port)})
+app.listen(PORT,()=>{ console.log("App Running On Port "+port)})
