@@ -10,6 +10,9 @@ app.use(function (req,res,next) {
     next();
 });
 
-app.use("/",{"message":"New movie created.","location":"/movies/105"})
+// app.use("/",routes);
+app.get('/', (req, res) => {
+    res.send('Hello World, from express');
+});
 
 app.listen(port,()=>{ console.log("App Running On Port "+port)})
