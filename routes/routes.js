@@ -12,6 +12,8 @@ let admin = require("./admin");
 let doctor = require("./doctor");
 let forum = require("./forum");
 
+router.get("/",()=>{res.send("welcom to workfitt api")});
+
 router.post("/adminLogin",middleware.adminLogin)
 router.post("/addAdmin",middleware.addAdmin)
 router.get("/adminList",middleware.adminList);
