@@ -17,6 +17,6 @@
     "template":{
         "prescription_email":"prescription_email"
     },
-    "apiurl":"http://localhost:8000/",
-    "adminurl": "http://localhost:3000/"
+    "apiurl":"https://workfitt-api.herokuapp.com/",
+    "adminurl": "https://workfit-adminpanel.herokuapp.com/"
 }
