@@ -14,4 +14,4 @@ app.use(function (req,res,next) {
 app.use("/",routes)
 
 
-app.listen(process.env.PORT || 8000,()=>{ console.log("App Running On Port "+port)})
+app.listen(process.env.PORT || 8000)
