@@ -13,7 +13,7 @@ module.exports.addAdjunct = async (req) => {
 
     let query = "insert into mst_adjuncts (adjunct_name,adjunct_instruction_id,adjunct_time,isActive) values (?,?,?,?)"
     let values = [req.adjunct_name, req.adjunct_instruction_id, req.adjunct_time, 1];
-    console.log("query",query);
+    console.log("query", query);
     let result = await db.executevaluesquery(query, values);
     console.log("result", result);
     if (result.insertId) {
@@ -28,6 +28,12 @@ exports.ajunctList = async (req, res) => {
     try {
         let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
         let sort = '';
+        let condition = " (adj.isActive=? OR adj.isActive=?) and (inst.isActive=? OR inst.isActive=?) "
+        let values = [1, 0, 1, 0]
+        if (req.query.adjunct_id) {
+            condition += " and adjunct_id=? "
+            values.push(parseInt(req.query.adjunct_id))
+        }
         if (req.query.sort) {
             if (req.query.sort == 'asc' || req.query.sort == 'ASC') {
                 sort = req.query.sort ? 'ORDER BY adj.adjunct_id ASC' : '';
@@ -36,12 +42,11 @@ exports.ajunctList = async (req, res) => {
             }
         }
         let query = `SELECT adj.*, ROW_NUMBER() OVER (ORDER BY adj.adjunct_id ASC) AS id, 
-        inst.instruction_name,inst.instruction_id FROM mst_adjuncts as adj 
+        inst.* FROM mst_adjuncts as adj 
         join mst_instructions as inst on adj.adjunct_instruction_id=inst.instruction_id  
-        where  (adj.isActive=1 OR adj.isActive=0) and (inst.isActive=1 OR inst.isActive=0) 
-        ${sort} ${limit}`;
+        where  ${condition} ${sort} ${limit}`;
         // console.log("query",query);
-        let result = await db.executequery(query);
+        let result = await db.executevaluesquery(query,values);
         console.log("data", result);
         if (result.length > 0) {
             return { status: true, data: result };
@@ -87,7 +92,7 @@ exports.updateAdjunct = async (req, res) => {
         if (req.adjunct_time) {
             cols += ` adjunct_time="${req.adjunct_time}",`
         }
-        if (req.isActive||req.isActive==0) {
+        if (req.isActive || req.isActive == 0) {
             cols += ` isActive=${req.isActive},`
         }
 

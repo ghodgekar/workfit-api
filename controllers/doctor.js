@@ -343,7 +343,7 @@ exports.prescription = async (req, res) => {
                 let tempData = await db.executequery(selectTemp);
                 if (doctorData.length > 0 && tempData.length > 0) {
                     let html = tempData[0].template_content;
-                    html = html.replace("{{doctor_logo}}", config.url + '/uploads/images/' + doctorData[0].doctor_logo);
+                    html = html.replace("{{doctor_logo}}", config.apiurl + 'uploads/images/' + doctorData[0].doctor_logo);
                     html = html.replace(/{{doctor_name}}/g, doctorData[0].doctor_name);
                     html = html.replace("{{doctor_address}}", doctorData[0].doctor_address);
                     html = html.replace("{{patient_name}}", bodyObj.patient_name);

@@ -29,13 +29,13 @@ module.exports.addBodyArea = async (req) => {
 }
 // getBodyPartArr("{\"0\":1,\"1\":2,\"2\":2}")
 async function getBodyPartArr(bodyPartArr) {
-    console.log({bodyPartArr});
+    console.log({ bodyPartArr });
     bodyPartArr = JSON.parse(bodyPartArr)
-    console.log({bodyPartArr});
+    console.log({ bodyPartArr });
     for (const key in bodyPartArr) {
-        console.log("bodyPartArr[key]",bodyPartArr[key]);
+        console.log("bodyPartArr[key]", bodyPartArr[key]);
         let bodyPart = await bodyPartController.getBodyPartById({ "body_part_id": bodyPartArr[key] })
-        console.log("bodyPart",bodyPart);
+        console.log("bodyPart", bodyPart);
         bodyPartArr[key] = bodyPart?.data[0]?.body_part_name;
         // console.log("bodyPart",bodyPart);
     }
@@ -117,7 +117,7 @@ exports.updateBodyArea = async (req, res) => {
             values.push(req.body_area_used_for)
         }
 
-        if (req.isActive||req.isActive==0) {
+        if (req.isActive || req.isActive == 0) {
             cols += ` isActive=?,`
             values.push(req.isActive)
         }
@@ -142,7 +142,7 @@ exports.updateBodyArea = async (req, res) => {
 
 exports.bodyAreaByUsedFor = async (req, res) => {
     try {
-        if (!(req.query.body_area_used_for && req.query.body_area_id)) {
+        if (!(req.query.body_area_used_for && (req.query.body_area_id || req.query.body_area_name))) {
             return { status: false, msg: "Please Enter body_area_used_for or body_area_id" }
         }
         let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
@@ -161,6 +161,9 @@ exports.bodyAreaByUsedFor = async (req, res) => {
         if (req.query.body_area_id) {
             condition += `and body_area_id=${req.query.body_area_id} `
         }
+        if (req.query.body_area_name) {
+            condition += `and body_area_name=${req.query.body_area_name} `
+        }
         let query = `SELECT * FROM mst_body_areas where ${condition} ${sort} ${limit}`;
         // console.log("query",query);
         let result = await db.executequery(query);
@@ -172,7 +175,7 @@ exports.bodyAreaByUsedFor = async (req, res) => {
             }
             return { status: true, data: result };
         } else {
-            return { status: true, data:[], msg: "Oop's No Body Area Found" };
+            return { status: true, data: [], msg: "Oop's No Body Area Found" };
         }
     } catch (err) {
         console.log(err);

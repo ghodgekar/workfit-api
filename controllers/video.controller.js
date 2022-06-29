@@ -1,15 +1,15 @@
 const db = require('../config/dbconnection');
-async function validateAddRequest(req){
-    if (!req.video_iframe ) {
+async function validateAddRequest(req) {
+    if (!req.video_iframe) {
         return { status: false, msg: "required field video_iframe missing" }
     }
-    if(!req.video_name){
+    if (!req.video_name) {
         return { status: false, msg: "required field video_name missing" }
     }
-    if(!req.video_type){
+    if (!req.video_type) {
         return { status: false, msg: "required field video_type missing" }
     }
-    return {status:true}
+    return { status: true }
 }
 
 module.exports.addVideo = async (req) => {
@@ -31,10 +31,18 @@ exports.videoList = async (req, res) => {
     try {
         let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
         let sort = '';
-        let condition="*,ROW_NUMBER() OVER (ORDER BY video_id DESC) AS id"
-        if(req.query.callFor=="dropdown"){
-            condition="video_id as value, video_name as label"
+        let cols = "*,ROW_NUMBER() OVER (ORDER BY video_id DESC) AS id"
+        let condition = " (isActive=? OR isActive=?) "
+        let values = [1, 0]
+        if (req.query.callFor == "dropdown") {
+            cols = "video_id as value, video_name as label"
         }
+
+        if (req.query.video_id) {
+            condition+= " and video_id=? "
+            values.push(req.query.video_id)
+        }
+
         if (req.query.sort) {
             if (req.query.sort == 'asc' || req.query.sort == 'ASC') {
                 sort = req.query.sort ? 'ORDER BY video_id ASC' : '';
@@ -43,9 +51,9 @@ exports.videoList = async (req, res) => {
             }
         }
 
-        let query = `SELECT ${condition} FROM mst_videos where (isActive=1 OR isActive=0) ${sort} ${limit}`;
+        let query = `SELECT ${cols} FROM mst_videos where ${condition} ${sort} ${limit} `;
         // console.log("query",query);
-        let result = await db.executequery(query);
+        let result = await db.executevaluesquery(query,values);
         console.log("data", result);
         if (result.length > 0) {
             return { status: true, data: result };
@@ -111,7 +119,7 @@ exports.updateVideo = async (req, res) => {
         if (!req.video_id) {
             return { status: false, msg: "Please Enter Video Id" }
         }
-        let values=[]
+        let values = []
 
         let cols = ""
         if (req.video_name) {
@@ -126,7 +134,7 @@ exports.updateVideo = async (req, res) => {
             cols += ` video_iframe= ?,`
             values.push(req.video_iframe)
         }
-        if (req.isActive||req.isActive==0) {
+        if (req.isActive || req.isActive == 0) {
             cols += ` isActive=?,`
             values.push(req.isActive)
         }
@@ -135,7 +143,7 @@ exports.updateVideo = async (req, res) => {
         cols = cols.substring(0, cols.lastIndexOf(",")) + " " + cols.substring(cols.lastIndexOf(",") + 1);
 
         let query = "UPDATE mst_videos SET " + cols + " where video_id = ?";
-        let data = await db.executevaluesquery(query,values)
+        let data = await db.executevaluesquery(query, values)
         // console.log(data);
         if (data.affectedRows) {
             return { status: true, msg: 'Data Updated successfully!' };

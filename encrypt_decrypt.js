@@ -2,10 +2,7 @@ const CryptoJS = require("crypto-js");
 const secret = 'shezhuansauce';
 
 module.exports.encrypt = function (text) {
-
-
     var ciphertext = CryptoJS.AES.encrypt(text, secret).toString();
-
     return ciphertext;
 }
 

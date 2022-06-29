@@ -58,7 +58,7 @@ router.get("/doctorAdviceList",middleware.doctorAdviceList);
 router.post("/deleteDoctorAdvice",middleware.deleteDoctorAdvice);
 router.post("/updateDoctorAdvice",middleware.updateDoctorAdvice);
 router.get("/doctorAdviceByType",middleware.doctorAdviceByType);
-router.post("/doctorAdviceByBodyAreaId",middleware.doctorAdviceByBodyAreaId);
+router.post("/doctorAdviceByBodyArea",middleware.doctorAdviceByBodyArea);
 // Doctor's Advice
 
 // Body Area
@@ -74,7 +74,8 @@ router.post("/addExercise",middleware.addExercise);
 router.get("/exerciseList",middleware.exerciseList);
 router.post("/deleteExercise",middleware.deleteExercise);
 router.post("/updateExercise",middleware.updateExercise);
-router.post("/exerciseByBodyAreaId",middleware.exerciseByBodyAreaId);
+router.post("/exerciseByBodyArea",middleware.exerciseByBodyArea);
+router.post("/updateExerciseTrack",middleware.updateExerciseTrack);
 // Exercise
 
 //Subscription
@@ -91,7 +92,14 @@ router.post("/updateEmailTemplate",middleware.updateEmailTemplate);
 router.post("/deleteEmailTemplate",middleware.deleteEmailTemplate)
 //Email Template
 
+// Prescription
 router.post("/addPrescription",middleware.addPrescription)
+router.get("/getPrescriptionById",middleware.getPrescriptionById)
+// Prescription
+
+// Doctor
+router.post("/addDoctor",middleware.addDoctor)
+// Doctor
 
 
 router.get("*",(req,res,next)=>{res.send({status:false,err:'Route not defined!'})});

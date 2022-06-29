@@ -9,6 +9,7 @@ const exerciseController = require("./controllers/execise.controller")
 const subscriptionController = require("./controllers/subscription.controller")
 const emailTemplateController = require("./controllers/emailTemplate.controller")
 const prescriptionController = require("./controllers/prescription.controller")
+const doctorController = require("./controllers/doctor.controller")
 
 
 
@@ -305,10 +306,10 @@ module.exports.doctorAdviceByType = async (req, res) => {
     }
 }
 
-module.exports.doctorAdviceByBodyAreaId = async (req, res) => {
+module.exports.doctorAdviceByBodyArea = async (req, res) => {
     try {
-        let doctorAdviceByBodyAreaId = await doctorAdviceController.doctorAdviceByBodyAreaId(req.body)
-        res.send(doctorAdviceByBodyAreaId)
+        let doctorAdviceByBodyArea = await doctorAdviceController.doctorAdviceByBodyArea(req.body)
+        res.send(doctorAdviceByBodyArea)
     } catch (error) {
         console.log("err", error);
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
@@ -411,10 +412,20 @@ module.exports.updateExercise = async (req, res) => {
     }
 }
 
-module.exports.exerciseByBodyAreaId = async (req, res) => {
+module.exports.exerciseByBodyArea = async (req, res) => {
     try {
-        let exerciseByBodyAreaId = await exerciseController.exerciseByBodyAreaId(req.body)
-        res.send(exerciseByBodyAreaId)
+        let exerciseByBodyArea = await exerciseController.exerciseByBodyArea(req.body)
+        res.send(exerciseByBodyArea)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+module.exports.updateExerciseTrack = async (req, res) => {
+    try {
+        let updateExerciseTrack = await exerciseController.updateExerciseTrack(req.body)
+        res.send(updateExerciseTrack)
     } catch (error) {
         console.log("err", error);
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
@@ -508,7 +519,7 @@ module.exports.updateEmailTemplate = async (req, res) => {
 }
 // Email Template
 
-
+// Prescription
 module.exports.addPrescription = async (req, res) => {
     try {
         let addPrescription = await prescriptionController.addPrescription(req.body)
@@ -518,3 +529,27 @@ module.exports.addPrescription = async (req, res) => {
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
     }
 }
+
+module.exports.getPrescriptionById = async (req, res) => {
+    try {
+        let getPrescriptionById = await prescriptionController.getPrescriptionById(req)
+        res.send(getPrescriptionById)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+// Prescription
+
+// Doctor
+module.exports.addDoctor = async (req, res) => {
+    try {
+        let addDoctor = await doctorController.addDoctor(req)
+        res.send(addDoctor)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+// Doctor

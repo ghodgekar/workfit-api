@@ -8,14 +8,15 @@
         "port": ""
     },
     "smtp":{
-        "service": "gmail",
+        "host": "smtp.gmail.com",
         "auth": {
-            "user": "",
-            "pass": ""
+            "user": "akshaynarkar01@gmail.com",
+            "pass": "ywbmbwoovpyivdav"
         }
     },
     "template":{
         "prescription_email":"prescription_email"
     },
-    "url":"http://localhost:8000"
+    "apiurl":"http://localhost:8000/",
+    "adminurl": "http://localhost:3000/"
 }

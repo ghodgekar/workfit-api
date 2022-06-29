@@ -5,11 +5,13 @@ async function validateAddRequest(req) {
     if (!req.advice_name) {
         return { status: false, msg: "required field advice name missing" }
     }
-    if (!req.advice_body_part_id) {
-        return { status: false, msg: "required field body part id missing" }
-    }
+
     if (!req.advice_type) {
         return { status: false, msg: "required field advice type missing" }
+    }
+
+    if (req.advice_type == "imaging" && !req.advice_body_part_id) {
+        return { status: false, msg: "required field body part id missing" }
     }
     return { status: true }
 }
@@ -41,7 +43,7 @@ exports.doctorAdviceList = async (req, res) => {
             }
         }
 
-        let query = `SELECT adv.*,ROW_NUMBER() OVER (ORDER BY advice_id DESC) AS id, bod.body_part_name FROM mst_doctor_advice as adv  join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id where (adv.isActive=1 OR adv.isActive=0) and (bod.isActive=1 OR bod.isActive=0) ${sort} ${limit}`;
+        let query = `SELECT adv.*,ROW_NUMBER() OVER (ORDER BY advice_id DESC) AS id, bod.body_part_name FROM mst_doctor_advice as adv left join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id where (adv.isActive=1 OR adv.isActive=0) ${sort} ${limit}`;
         // console.log("query",query);
         let result = await db.executequery(query);
         console.log("data", result);
@@ -70,7 +72,7 @@ exports.doctorAdviceByType = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY advice_id DESC' : '';
             }
         }
-        let query = `SELECT adv.*, bod.body_part_name FROM mst_doctor_advice as adv  join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id where (adv.isActive=1 OR adv.isActive=0) and (bod.isActive=1 OR bod.isActive=0) and adv.advice_type="${req.query.advice_type}" ${sort} ${limit}`;
+        let query = `SELECT adv.* FROM mst_doctor_advice as adv where (adv.isActive=1 OR adv.isActive=0) and adv.advice_type="${req.query.advice_type}" ${sort} ${limit}`;
         // console.log("query",query);
         let result = await db.executequery(query);
         // console.log("data", result);
@@ -120,7 +122,7 @@ exports.updateDoctorAdvice = async (req, res) => {
         if (req.advice_body_part_id) {
             cols += ` advice_body_part_id= ${req.advice_body_part_id},`
         }
-        if (req.isActive||req.isActive==0) {
+        if (req.isActive || req.isActive == 0) {
             cols += ` isActive=${req.isActive},`
         }
 
@@ -140,12 +142,32 @@ exports.updateDoctorAdvice = async (req, res) => {
     }
 }
 
-exports.doctorAdviceByBodyAreaId = async (req, res) => {
+exports.doctorAdviceByBodyArea = async (req, res) => {
     try {
-        if (!req.body_area_id) {
-            return { status: false, msg: "Please Enter body_area_id" }
+        console.log("doctorAdviceByBodyArea request",req);
+        if (!req.body_area_id && !req.body_area_name) {
+            return { status: false, msg: "Please Enter body_area_id or body_area_name" }
         }
-        let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor({ query: { body_area_id: req.body_area_id, body_area_used_for: "advice" } })
+        let condition = " (adv.isActive=? OR adv.isActive=?) "
+        let values = [1, 0]
+        if (req.advice_type) {
+            condition += " and adv.advice_type=?"
+            values.push(req.advice_type)
+        }
+        let bodyAreaReq = {
+            query: {
+                body_area_used_for: "advice"
+            }
+        }
+        if (req.body_area_name) {
+            bodyAreaReq.body_area_name = req.body_area_name
+        }
+
+        if (req.body_area_id) {
+            bodyAreaReq.body_area_id = req.body_area_id
+        }
+
+        let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor(bodyAreaReq)
         // console.log("body_area_id_arr",body_area_id_arr);
         let body_area_id_arr = []
         if (bodyAreaByUsedForRes.data && bodyAreaByUsedForRes.data.length) {
@@ -165,10 +187,9 @@ exports.doctorAdviceByBodyAreaId = async (req, res) => {
         let query = "SELECT adv.*, bod.body_part_name FROM mst_doctor_advice as adv "
             + "join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id "
             + "where "
-            + "(adv.isActive=1 OR adv.isActive=0) and (bod.isActive=1 OR bod.isActive=0) "
-            + orderBy + limit;
+            + condition + orderBy + limit;
         // console.log("query", query);
-        let result = await db.executequery(query)
+        let result = await db.executevaluesquery(query, values)
         console.log(result);
         if (result.length > 0) {
             return { status: true, data: result };

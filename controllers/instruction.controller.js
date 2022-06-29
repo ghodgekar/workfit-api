@@ -77,6 +77,50 @@ exports.instructionByType = async (req, res) => {
     }
 }
 
+exports.getInstruction = async (req, res) => {
+    try {
+        let condition = " (isActive=? OR isActive=?) ", values = [1, 0]
+        if (req.query.instruction_type) {
+            condition += " and instruction_type=? "
+            values.push(req.query.instruction_type)
+        }
+
+        if (req.query.instruction_id) {
+            condition += " and instruction_id=? "
+            values.push(req.query.instruction_id)
+        }
+
+        let cols = "*"
+        if (req.query.usedFor == "dropdown") {
+            cols = " instruction_id as value, instruction_name as label "
+        }
+
+        let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
+        let sort = '';
+
+        if (req.query.sort) {
+            if (req.query.sort == 'asc' || req.query.sort == 'ASC') {
+                sort = req.query.sort ? 'ORDER BY instruction_id ASC' : '';
+            } else if (req.query.sort == 'desc' || req.query.sort == 'DESC') {
+                sort = req.query.sort ? 'ORDER BY instruction_id DESC' : '';
+            }
+        }
+
+        let query = `SELECT ${cols} FROM mst_instructions where  ${condition} ${sort} ${limit}`;
+        // console.log("query",query);
+        let result = await db.executevaluesquery(query, values);
+        // console.log("data", result);
+        if (result.length > 0) {
+            return { status: true, data: result };
+        } else {
+            return { status: true, msg: "Oop's No Instructions Found" };
+        }
+    } catch (err) {
+        console.log(err);
+        return { status: false, err: err };
+    }
+}
+
 
 exports.deleteInstruction = async (req, res) => {
     try {
@@ -103,7 +147,7 @@ exports.updateInstruction = async (req, res) => {
         }
         console.log(req);
         let cols = ""
-        let values=[]
+        let values = []
         if (req.instruction_name) {
             cols += ` instruction_name=? ,`
             values.push(req.instruction_name)
@@ -124,7 +168,7 @@ exports.updateInstruction = async (req, res) => {
             cols += ` instruction_description_english=?,`
             values.push(req.description_english)
         }
-        if (req.isActive||req.isActive==0) {
+        if (req.isActive || req.isActive == 0) {
             console.log("heree");
             cols += ` isActive=?,`
             values.push(req.isActive)
@@ -134,7 +178,7 @@ exports.updateInstruction = async (req, res) => {
         values.push(req.instruction_id)
 
         let query = "UPDATE mst_instructions SET " + cols + " where instruction_id = ?";
-        let data = await db.executevaluesquery(query,values)
+        let data = await db.executevaluesquery(query, values)
         console.log(data);
         if (data.affectedRows) {
             return { status: true, msg: 'Data Updated successfully!' };

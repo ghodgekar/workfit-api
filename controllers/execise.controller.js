@@ -58,7 +58,7 @@ exports.exerciseList = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY exercise_id DESC' : '';
             }
         }
-        let query = `SELECT exe.*, ROW_NUMBER() OVER (ORDER BY exe.exercise_id DESC) AS id, inst.instruction_name, bod.body_part_name, vid.video_name 
+        let query = `SELECT exe.*, ROW_NUMBER() OVER (ORDER BY exe.exercise_id DESC) AS id, inst.instruction_name bod.body_part_name, vid.video_name 
                         FROM workfitt.mst_exercises as exe 
                         join workfitt.mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
                         join workfitt.mst_videos as vid on exe.exercise_video_id=vid.video_id
@@ -157,12 +157,26 @@ exports.updateExercise = async (req, res) => {
     }
 }
 
-exports.exerciseByBodyAreaId = async (req, res) => {
+exports.exerciseByBodyArea = async (req, res) => {
     try {
-        if (!req.body_area_id) {
-            return { status: false, msg: "Please Enter body_area_id" }
+        console.log("exerciseByBodyArea req",req);
+        if (!req.body_area_id && !req.body_area_name) {
+            return { status: false, msg: "Please Enter body_area_id or body_area_name" }
         }
-        let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor({ query: { body_area_id: req.body_area_id, body_area_used_for: "exercise" } })
+
+        let bodyAreaReq = {
+            query: {
+                body_area_used_for: "exercise"
+            }
+        }
+        if (req.body_area_name) {
+            bodyAreaReq.body_area_name = req.body_area_name
+        }
+
+        if (req.body_area_id) {
+            bodyAreaReq.body_area_id = req.body_area_id
+        }
+        let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor(bodyAreaReq)
         // console.log("body_area_id_arr",body_area_id_arr);
         let body_area_id_arr = []
         if (bodyAreaByUsedForRes.data && bodyAreaByUsedForRes.data.length) {
@@ -196,5 +210,37 @@ exports.exerciseByBodyAreaId = async (req, res) => {
     } catch (error) {
         console.log("err", error)
         return { status: false, err: "Oop's Something Went Wrong" }
+    }
+}
+
+async function validateTrackRequest(req) {
+    if (!req.prescription_id) {
+        return { status: false, msg: "required field prescription_id missing" }
+    }
+
+    if (!req.exercise_name) {
+        return { status: false, msg: "required field exercise_name missing" }
+    }
+
+    if (!req.exercise_date) {
+        return { status: false, msg: "required field exercise_date missing" }
+    }
+
+    return { status: true }
+
+}
+
+
+exports.updateExerciseTrack = async (req, res) => {
+    let validation = await validateTrackRequest(req);
+    if (!validation.status) return validation
+    let values = [1, req.prescription_id, req.exercise_date, req.exercise_name]
+    let query = `UPDATE mst_exercise_track SET isCompleted = ? WHERE prescription_id = ? AND exercise_date = ? AND exercise_name = ?`;
+    let result = await db.executevaluesquery(query, values)
+    if (result.affectedRows) {
+        return { status: true, msg: 'Exercise Track Updated Sucessfully.' };
+    }
+    else {
+        return { status: false, msg: 'Exercise Track  Not Updated.' };
     }
 }

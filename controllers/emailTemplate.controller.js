@@ -121,13 +121,15 @@ exports.updateEmailTemplate = async (req, res) => {
         }
 
         if (req.isActive || req.isActive == 0) {
-            cols += ` isActive=${req.isActive},`
+            cols += ` isActive=?,`
+            values.push(req.isActive)
         }
 
         cols = cols.substring(0, cols.lastIndexOf(",")) + " " + cols.substring(cols.lastIndexOf(",") + 1);
+        values.push(req.template_id)
 
-        let query = "UPDATE mst_email_templates SET " + cols + " where template_id = " + req.template_id;
-        let data = await db.executequery(query)
+        let query = "UPDATE mst_email_templates SET " + cols + " where template_id = ?" ;
+        let data = await db.executevaluesquery(query,values)
         console.log(data);
         if (data.affectedRows) {
             return { status: true, msg: 'Data Updated successfully!' };

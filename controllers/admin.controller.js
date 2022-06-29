@@ -95,7 +95,7 @@ exports.updateAdmin = async (req, res) => {
 
         cols = cols.substring(0, cols.lastIndexOf(",")) + " " + cols.substring(cols.lastIndexOf(",") + 1);
         values.push(req.admin_id)
-        let query = "UPDATE mst_admin SET " + cols + " where admin_id = " + req.admin_id;
+        let query = "UPDATE mst_admin SET " + cols + " where admin_id = ?" ;
         let data = await db.executevaluesquery(query)
         // console.log(data);
         if (data.affectedRows) {
@@ -157,157 +157,6 @@ exports.adminList = async (req, res) => {
 
 
 
-
-
-exports.addEmailTemp = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        res.send({ status: false, err: errors.array() })
-    } else {
-        try {
-            let bodyObj = {
-                "template_code": req.body.template_code,
-                "template_name": req.body.template_name,
-                "template_content": req.body.template_content,
-                "isActive": req.body.isActive
-            };
-            let query = 'INSERT INTO mst_email_templates(template_code, template_name, template_content, isActive) VALUES (?,?,?,?)';
-            let values = [bodyObj.template_code, bodyObj.template_name, bodyObj.template_content, bodyObj.isActive];
-            let data = await db.executevaluesquery(query, values);
-            if (data.insertId) {
-                res.send({ status: true, id: data.insertId });
-            } else {
-                res.send({ status: false, err: 'DB issue!' });
-            }
-        } catch (err) {
-            console.log(err);
-            res.send({ status: false, err: err });
-        }
-    }
-}
-
-exports.updateEmailTemp = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        res.send({ status: false, err: errors.array() })
-    } else {
-        try {
-            let bodyObj = {
-                "template_id": req.body.template_id,
-                "template_code": req.body.template_code ? req.body.template_code : '',
-                "template_name": req.body.template_name ? req.body.template_name : '',
-                "template_content": req.body.template_content ? req.body.template_content : '',
-                "isActive": req.body.isActive
-            };
-            let isValid = await db.executequery(`SELECT * FROM mst_email_templates where template_id = ${bodyObj.template_id}`);
-            if (isValid.length == 0) {
-                res.send({ status: false, err: "Id not present." });
-            } else {
-                let isExist = false;
-                if (isValid[0].template_code != bodyObj.template_code) {
-                    isExist = await checkInTable(bodyObj.template_code, 'mst_email_templates', 'template_code');
-                    if (isExist) {
-                        res.send({ status: false, err: "Code already present!" });
-                    }
-                }
-                if (!isExist) {
-                    let query = `UPDATE mst_email_templates SET template_code = '${bodyObj.template_code}', template_name = '${bodyObj.template_name}', template_content = '${bodyObj.template_content}', isActive = '${bodyObj.isActive}' WHERE template_id = ${bodyObj.template_id}`;
-                    let data = await db.executequery(query);
-                    if (data.affectedRows) {
-                        res.send({ status: true, msg: 'Updated.' });
-                    } else {
-                        res.send({ status: false, err: 'DB issue!' });
-                    }
-                }
-            }
-        } catch (err) {
-            console.log(err);
-            res.send({ status: false, err: err });
-        }
-    }
-}
-
-exports.deleteEmailTemp = async (req, res) => {
-    try {
-        let id = req.params.id;
-        let query = `UPDATE mst_email_templates SET isActive = 2 WHERE template_id = ${id}`;
-        let data = await db.executequery(query);
-        if (data.affectedRows) {
-            res.send({ status: true, msg: 'Deleted.' });
-        } else {
-            res.send({ status: false, err: 'DB issue.' });
-        }
-    } catch (err) {
-        console.log(err);
-        res.send({ status: false, err: err });
-    }
-}
-
-exports.emailTempList = async (req, res) => {
-    try {
-        let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
-        let sort = '';
-        if (req.query.sort) {
-            if (req.query.sort == 'asc' || req.query.sort == 'ASC') {
-                sort = req.query.sort ? 'ORDER BY template_id ASC' : '';
-            } else if (req.query.sort == 'desc' || req.query.sort == 'DESC') {
-                sort = req.query.sort ? 'ORDER BY template_id DESC' : '';
-            }
-        }
-        let query = `SELECT * FROM mst_email_templates ${sort} ${limit}`;
-        let data = await db.executequery(query);
-        if (data.length > 0) {
-            res.send({ status: true, data: data });
-        } else {
-            res.send({ status: false, err: 'DB issue!' });
-        }
-    } catch (err) {
-        console.log(err);
-        res.send({ status: false, err: err });
-    }
-}
-
-exports.getEmailTempByCode = async (req, res) => {
-    try {
-        let code = req.params.code;
-        if (code) {
-            let query = `SELECT template_code,template_name,template_content FROM mst_email_templates WHERE isActive = 1 AND template_code = '${code}'`;
-            let data = await db.executequery(query);
-            if (data.length > 0) {
-                let tempData = {
-                    code: data[0].template_code,
-                    name: data[0].template_name,
-                    content: data[0].template_content
-                };
-                res.send({ status: true, data: tempData });
-            } else {
-                res.send({ status: false, err: 'Code not found.' });
-            }
-        } else {
-            res.send({ status: false, err: 'Code required!' });
-        }
-    } catch (err) {
-        console.log(err);
-        res.send({ status: false, err: err });
-    }
-}
-
-exports.getEmailTempById = async (req, res) => {
-    try {
-        let id = req.params.id;
-        let query = `SELECT * FROM mst_email_templates WHERE template_id = ${id}`;
-        let data = await db.executequery(query);
-        if (data.length > 0) {
-            res.send({ status: true, data: data });
-        } else {
-            res.send({ status: false, err: 'DB issue.' });
-        }
-    } catch (err) {
-        console.log(err);
-        res.send({ status: false, err: err });
-    }
-}
-
 exports.getExerciseArr = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -346,15 +195,5 @@ exports.getExerciseArr = async (req, res) => {
         } else {
             res.send({ status: false, err: 'Name not found.' });
         }
-    }
-}
-
-async function checkInTable(value, table, key) {
-    let query = `SELECT ${key} from ${table} where ${key} = '${value}'`;
-    let data = await db.executequery(query);
-    if (data.length > 0) {
-        return true;
-    } else {
-        return false;
     }
 }
