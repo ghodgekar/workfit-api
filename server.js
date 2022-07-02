@@ -12,4 +12,5 @@ app.use(function (req,res,next) {
 
 app.use("/",routes)
 
-app.listen(port,()=>{ console.log("App Running On Port "+port)})
+app.listen(process.env.PORT || port);
+  
