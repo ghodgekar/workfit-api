@@ -1,10 +1,10 @@
 {
     "port":8000,
     "database":{
-        "host": "31.220.110.23",
-        "user": "u516485864_testApi",
-        "password": "Sur@bhi@30",
-        "database": "u516485864_testApi",
+        "host": "localhost",
+        "user": "root",
+        "password": "password",
+        "database": "workfitt",
         "port": ""
     },
     "smtp":{
@@ -15,8 +15,9 @@
         }
     },
     "template":{
-        "prescription_email":"prescription_email"
+        "prescription_email":"email_template",
+        "invoice":"invoice"
     },
-    "apiurl":"https://workfitt-api.herokuapp.com/",
-    "adminurl": "https://workfit-adminpanel.herokuapp.com/"
+    "apiurl":"http://localhost:8000/",
+    "adminurl": "http://localhost:3000/"
 }

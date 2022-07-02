@@ -11,6 +11,7 @@ const config_url = require('../config/config.json');
 const adjunctController = require("./adjunct.controller");
 const videoController = require("./video.controller")
 const instructionController = require("./instruction.controller")
+const htmlPDF = require('html-pdf');
 
 
 async function validateAddRequest(req) {
@@ -47,8 +48,8 @@ module.exports.addPrescription = async (req) => {
             let email = req.patient_email.replace(/\./g, "_")
             let fileName = email + "_" + req.exercise_arr[i].exercise_name + "_" + moment().format('MMMM_DD_YYYY') + '_audio.mp3';
             await generateAudio(req.exercise_arr[i], fileName)
-            req.exercise_arr[i].audioFilePath = fileName
-            let videoObj = await getVideoObj(req.exercise_arr[i].video_id);
+            req.exercise_arr[i].audioFilePath ="/uploads/audios/"+ fileName
+            let videoObj = await getVideoObj(req.exercise_arr[i].exercise_video_id);
             req.exercise_arr[i].videoObj = videoObj;
             let instructionObj = await getInstructionObj(req.exercise_arr[i].exercise_instruction_id)
             req.exercise_arr[i].instructionObj = instructionObj
@@ -71,6 +72,19 @@ module.exports.addPrescription = async (req) => {
 
     let html = await generateEmailTemplate(req, prescription_id)
 
+    var mailOptions = {
+        from: config_url.smtp.auth.user,
+        to: req.patient_email,
+        subject: 'Prescription',
+        html: html
+    };
+    if(req.generate_bill){
+        let pdfBuffer = await generatePDF(req);
+        if(pdfBuffer){
+            mailOptions.attachments = { filename: "invoice_"+Date.now()+".pdf", content: pdfBuffer };
+        }
+    }
+
     var transporter = nodemailer.createTransport({
         host: config_url.smtp.host, // hostname
         secureConnection: true, // use SSL
@@ -80,12 +94,6 @@ module.exports.addPrescription = async (req) => {
             pass: config_url.smtp.auth.pass
         }
     });
-    var mailOptions = {
-        from: config_url.smtp.auth.user,
-        to: req.patient_email,
-        subject: 'Prescription',
-        html: html
-    };
 
     transporter.sendMail(mailOptions, async function (error, info) {
         if (error) {
@@ -175,29 +183,29 @@ async function updateEmailSent(prescription_id) {
 // }
 
 async function generateEmailTemplate(req, prescription_id) {
-    let selectedTemplate = await getTemplate()
+    let selectedTemplate = await getTemplate(config_url.template.prescription_email)
     let html = selectedTemplate.template_content;
     let prescription_link = config_url.adminurl + "Prescription?prescription_id=" + prescription_id
     html = html.replace("{{prescription_link}}", prescription_link)
     return html
 }
 
-async function getTemplate() {
-    let query = `select template_content from mst_email_templates where isActive=?`
-    let values = [1]
+async function getTemplate(code) {
+    let query = `select template_content from mst_email_templates where isActive=? AND template_code=?`
+    let values = [1,code]
     let templateData = await db.executevaluesquery(query, values)
     if (templateData && templateData.length) return templateData[0]
     return false
 }
 
-// async function getDoctorData(doctorId) {
-//     let query = `SELECT * FROM mst_doctors where doctor_Id = ?`;
-//     let values = [doctorId];
-//     let doctorData = await db.executevaluesquery(query, values)
-//     if (doctorData && doctorData.length) return doctorData[0]
+async function getDoctorData(doctorId) {
+    let query = `SELECT * FROM mst_doctors where doctor_Id = ?`;
+    let values = [doctorId];
+    let doctorData = await db.executevaluesquery(query, values)
+    if (doctorData && doctorData.length) return doctorData[0]
 
-//     return false
-// }
+    return false
+}
 
 async function addPrescriptionToDb(req, patient_obj) {
     let query = `INSERT INTO mst_prescription
@@ -246,13 +254,13 @@ async function processPatient(req) {
     } else {
         let insertPatient = 'INSERT INTO mst_patient (patient_name, patient_age, patient_gender, patient_email, doctor_id, isActive) VALUES (?,?,?,?,?,?)';
         Value1.push(1)
-        let insertPatientData = await db.executevaluesquery(insertPatient,);
+        let insertPatientData = await db.executevaluesquery(insertPatient,Value1);
         patient = {
             patient_name: req.patient_name,
             patient_age: req.patient_age,
             patient_gender: req.patient_gender,
             patient_email: req.patient_email,
-            patient_id: insertPatientData.insertId
+            patient_id: insertPatientData.insertId 
         }
 
         return patient;
@@ -312,7 +320,69 @@ async function ssmlToAudio(ssmlText, outFile) {
     // console.log('Audio content written to file ' + outFile);
 }
 
-
+async function generatePDF(req){
+    try {
+        let selectedTemplate = await getTemplate(config_url.template.invoice);
+        if(!selectedTemplate) throw `${config_url.template.invoice} tamplate issue`;
+        let doctorData = await getDoctorData(req.doctor_id);
+        if(!doctorData) throw `${req.doctor_id} doesnt exist`;
+        
+        let html = selectedTemplate.template_content;
+        
+        html = html.replace("{{doctor_logo}}", doctorData.doctor_logo ? config_url.apiurl + 'uploads/images/' + doctorData.doctor_logo : '');
+        html = html.replace("{{bill_invoice_to}}", req.bill.bill_invoice_to ? req.bill.bill_invoice_to : '');
+        html = html.replace("{{bill_patient_name}}", req.bill.bill_patient_name ? req.bill.bill_patient_name : '');
+        html = html.replace("{{bill_patient_age}}", req.bill.bill_patient_age ? req.bill.bill_patient_age : '');
+        html = html.replace("{{bill_patient_gender}}", req.bill.bill_patient_gender ? req.bill.bill_patient_gender : '');
+        html = html.replace("{{bill_patient_address}}", req.bill.bill_patient_address ? req.bill.bill_patient_address : '');
+        html = html.replace("{{bill_date_of_evaluation}}", req.bill.bill_date_of_evaluation ? moment(req.bill.bill_date_of_evaluation).format('DD/MM/YYYY') : '');
+        html = html.replace("{{bill_time_evaluation}}", req.bill.bill_time_evaluation ? req.bill.bill_time_evaluation : '');
+        html = html.replace("{{bill_no}}", 'WF' + Date.now());
+        let consultation_charge = req.bill.is_consultation_charge ? doctorData.consultation_charge ? doctorData.consultation_charge : '0' : '0';
+        html = html.replace("{{consultation_charge}}", req.bill.is_consultation_charge ? doctorData.consultation_charge ? doctorData.consultation_charge : '0' : '0');
+        let treatment_charge = 0;
+        if(req.bill.bill_treatment_type == 1){
+            treatment_charge = doctorData.treatment1_charge ? doctorData.treatment1_charge : '0';
+            html = html.replace("{{treatment_charge}}", doctorData.treatment1_charge ? doctorData.treatment1_charge : '0');
+        } else if (req.bill.bill_treatment_type == 2){
+            treatment_charge = doctorData.treatment2_charge ? doctorData.treatment2_charge : '0';
+            html = html.replace("{{treatment_charge}}", doctorData.treatment2_charge ? doctorData.treatment2_charge : '0');
+        } else if (req.bill.bill_treatment_type == 3){
+            treatment_charge = doctorData.treatment3_charge ? doctorData.treatment3_charge : '0';
+            html = html.replace("{{treatment_charge}}", doctorData.treatment3_charge ? doctorData.treatment3_charge : '0');
+        } else {
+            html = html.replace("{{treatment_charge}}", '0');
+        }
+        let bill_modality_charges = req.bill.bill_modality_charges ? req.bill.bill_modality_charges : '0';
+        html = html.replace("{{bill_modality_charges}}", req.bill.bill_modality_charges ? req.bill.bill_modality_charges : '0');
+        let total = parseInt(consultation_charge) + parseInt(treatment_charge) + parseInt(bill_modality_charges)
+        html = html.replace("{{total}}", total);
+        html = html.replace("{{bill_discount}}", req.bill.bill_discount ? req.bill.bill_discount : '0');
+        let total_amount = 0;
+        if(!req.bill.bill_discount || req.bill.bill_discount != '0'){
+            let percent = parseInt(total) * (parseInt(req.bill.bill_discount) / 100);
+            total_amount = parseInt(total) - percent;
+        } else {
+            total_amount = parseInt(total)
+        }
+        html = html.replace("{{total_amount}}", total_amount.toFixed(2));
+        html = html.replace("{{doctor_sign}}", doctorData.doctor_sign ? config_url.apiurl + 'uploads/images/' + doctorData.doctor_sign : '');
+        html = html.replace("{{doctor_name}}", doctorData.doctor_name ? doctorData.doctor_name : '');
+        
+        return new Promise((resolve, reject) => {
+            htmlPDF.create(html).toBuffer((err, buffer) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(buffer);
+              }
+            });
+        });
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+};
 
 exports.getPrescriptionById = async (req, res) => {
     try {

@@ -10,6 +10,7 @@ const subscriptionController = require("./controllers/subscription.controller")
 const emailTemplateController = require("./controllers/emailTemplate.controller")
 const prescriptionController = require("./controllers/prescription.controller")
 const doctorController = require("./controllers/doctor.controller")
+const scaleController = require("./controllers/scale.controller")
 
 
 
@@ -65,6 +66,28 @@ module.exports.adminLogin = async (req, res) => {
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
     }
 }
+
+module.exports.adminPassword = async (req, res) => {
+    try {
+        let adminpass = await adminController.adminPassword(req.body)
+        res.send(adminpass)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+
+module.exports.admincheck = async (req, res) => {
+    try {
+        let admincheck = await adminController.admincheck(req.body)
+        res.send(admincheck)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
 
 module.exports.addAdmin = async (req, res) => {
     try {
@@ -255,6 +278,47 @@ module.exports.updateBodyPart = async (req, res) => {
 }
 // Body Part
 
+
+//Scale
+module.exports.addScale = async (req, res) => {
+    try {
+        let addScale = await scaleController.addScale(req.body)
+        res.send(addScale)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+module.exports.scaleList = async (req, res) => {
+    try {
+        let scaleList = await scaleController.scaleList(req)
+        res.send(scaleList)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+module.exports.deleteScale = async (req, res) => {
+    try {
+        let deleteScalet = await scaleController.deleteScale(req.body)
+        res.send(deleteScalet)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+module.exports.updateScale = async (req, res) => {
+    try {
+        let updateScale = await scaleController.updateScale(req.body)
+        res.send(updateScale)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
 // Doctor's Advice
 module.exports.addDoctorAdvice = async (req, res) => {
     try {

@@ -12,13 +12,13 @@ let admin = require("./admin");
 let doctor = require("./doctor");
 let forum = require("./forum");
 
-router.get("/",(req,res)=>{res.send("welcom to workfitt api")});
-
 router.post("/adminLogin",middleware.adminLogin)
 router.post("/addAdmin",middleware.addAdmin)
 router.get("/adminList",middleware.adminList);
 router.post("/updateAdmin",middleware.updateAdmin);
 router.post("/deleteAdmin",middleware.deleteAdmin)
+router.post("/adminchangepassword",middleware.adminPassword)
+router.post("/admincheck",middleware.admincheck)
 
 
 router.use("/admin",admin);
@@ -53,6 +53,13 @@ router.get("/bodyPartList",middleware.bodyPartList);
 router.post("/deleteBodyPart",middleware.deleteBodyPart);
 router.post("/updateBodyPart",middleware.updateBodyPart);
 // Body Part 
+
+// Scale Part 
+router.post("/addScale",middleware.addScale);
+router.get("/scaleList",middleware.scaleList);
+router.post("/deleteScale",middleware.deleteScale);
+router.post("/updateScale",middleware.updateScale);
+// Scale Part 
 
 // Doctor's Advice
 router.post("/addDoctorAdvice",middleware.addDoctorAdvice);
@@ -102,6 +109,9 @@ router.get("/getPrescriptionById",middleware.getPrescriptionById)
 // Doctor
 router.post("/addDoctor",middleware.addDoctor)
 // Doctor
+
+
+
 
 
 router.get("*",(req,res,next)=>{res.send({status:false,err:'Route not defined!'})});

@@ -24,6 +24,48 @@ module.exports.adminLogin = async (req) => {
 
 }
 
+module.exports.adminPassword = async (req) => {
+if(!req.admin_id){
+    return { status: false, msg: "required field Admin does not exist.." }
+}
+if(!req.admin_password){
+    return { status: false, msg: "required field Admin Password is missing.." }
+}
+req.admin_password= await encrypt_decrypt.encrypt(req.admin_password)
+ let query = "UPDATE mst_admin SET admin_password = ?  WHERE admin_id = ?  "
+ let values = [req.admin_password, req.admin_id]
+ let data = await db.executevaluesquery(query, values);
+ console.log("data",data);
+  if(data.affectedRows > 0){
+    return({ status: true, data: data , msg: "Admin password Updated successfully" });
+
+  }
+  else {
+    return({ status: false, err: 'Admin password does not Updated successfully' });
+ 
+  }
+}
+
+module.exports.admincheck = async (req) => {
+    console.log("req aarti",req)
+  if(!req.admin_cred){
+
+    return { status: false, msg: "required field Admin username  or emailId missing" }
+
+  }
+  let query = `SELECT * FROM mst_admin where admin_username = ? or admin_email = ?`;
+  let values = [req.admin_cred,req.admin_cred]
+  let data = await db.executevaluesquery(query, values);
+  
+  if (data.length > 0) {
+     return({ status: true, data: data , msg: "We found user...Yeah." });
+       }
+     else
+    {
+ return({ status: false, err: 'Username or Email does not match.' });
+
+}
+}
 
 async function validateAddRequest(req, apiName = false) {
     if (apiName !== "adminLogin") {

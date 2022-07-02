@@ -5,18 +5,25 @@ async function validateAddRequest(req) {
     if (!req.exercise_name) {
         return { status: false, msg: "required field exercise_name missing" }
     }
-    if ((!req.exercise_reps && req.exercise_reps != 0) || typeof req.exercise_reps !== "number") {
-        return { status: false, msg: "Please Enter Valid Value For exercise_reps" }
+    // if (!req.isTimeControlled) {
+        if ((!req.exercise_reps && req.exercise_reps != 0) || typeof req.exercise_reps !== "number") {
+            return { status: false, msg: "Please Enter Valid Value For exercise_reps" }
+        }
+        if ((!req.exercise_sets && req.exercise_sets != 0) || typeof req.exercise_sets !== "number") {
+            return { status: false, msg: "Please Enter Valid Value For exercise_sets" }
+        }
+        if ((!req.exercise_holds && req.exercise_holds != 0) || typeof req.exercise_holds !== "number") {
+            return { status: false, msg: "Please Enter Valid Value For exercise_holds" }
+        }
+        if ((!req.exercise_rests && req.exercise_rests != 0) || typeof req.exercise_rests !== "number") {
+            return { status: false, msg: "Please Enter Valid Value For exercise_rests" }
+        }
+    // }
+
+    if (req.isTimeControlled && (!req.exercise_time && req.exercise_time != 0) || typeof req.exercise_time !== "number") {
+        return { status: false, msg: "Please Enter Valid Value For exercise_time" }
     }
-    if ((!req.exercise_sets && req.exercise_sets != 0) || typeof req.exercise_sets !== "number") {
-        return { status: false, msg: "Please Enter Valid Value For exercise_sets" }
-    }
-    if ((!req.exercise_holds && req.exercise_holds != 0) || typeof req.exercise_holds !== "number") {
-        return { status: false, msg: "Please Enter Valid Value For exercise_holds" }
-    }
-    if ((!req.exercise_rests && req.exercise_rests != 0) || typeof req.exercise_rests !== "number") {
-        return { status: false, msg: "Please Enter Valid Value For exercise_rests" }
-    }
+
     if ((!req.exercise_body_part_id && req.exercise_body_part_id != 0) || typeof req.exercise_body_part_id !== "number") {
         return { status: false, msg: "Please Enter Valid Value For exercise_body_part_id" }
     }
@@ -32,12 +39,17 @@ async function validateAddRequest(req) {
 module.exports.addExercise = async (req) => {
     let validation = await validateAddRequest(req);
     if (!validation.status) return validation
-
+    
     let query = "INSERT INTO mst_exercises"
-        + "(exercise_name, exercise_reps, exercise_holds, exercise_sets, exercise_rests, exercise_body_part_id, exercise_video_id, exercise_instruction_id, isActive)"
+        + "(exercise_name, exercise_reps, exercise_holds, exercise_sets, exercise_rests, exercise_body_part_id, exercise_video_id, exercise_instruction_id,exercise_time,isMultidirectional,"
+        + "isTimeControlled, isActive)"
         + " VALUES "
-        + "(?,?,?,?,?,?,?,?,?)"
-    let values = [req.exercise_name, req.exercise_reps, req.exercise_holds, req.exercise_sets, req.exercise_rests, req.exercise_body_part_id, req.exercise_video_id, req.exercise_instruction_id, 1];
+        + "(?,?,?,?,?,?,?,?,?,?,"
+        + "?,?)"//12
+    let values = [
+        req.exercise_name, req.exercise_reps, req.exercise_holds, req.exercise_sets, req.exercise_rests, req.exercise_body_part_id, req.exercise_video_id, req.exercise_instruction_id, req.exercise_time, req.isMultidirectional,
+        req.isTimeControlled, 1
+    ];
     let result = await db.executevaluesquery(query, values);
     console.log("result", result);
     if (result.insertId) {
@@ -58,13 +70,13 @@ exports.exerciseList = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY exercise_id DESC' : '';
             }
         }
-        let query = `SELECT exe.*, ROW_NUMBER() OVER (ORDER BY exe.exercise_id DESC) AS id, inst.instruction_name bod.body_part_name, vid.video_name 
+        let query = `SELECT exe.*, ROW_NUMBER() OVER (ORDER BY exe.exercise_id DESC) AS id, inst.instruction_name, bod.body_part_name, vid.video_name 
                         FROM workfitt.mst_exercises as exe 
                         join workfitt.mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
                         join workfitt.mst_videos as vid on exe.exercise_video_id=vid.video_id
                         join workfitt.mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
                     where (exe.isActive=1 OR exe.isActive=0) ${sort} ${limit}`;
-        // console.log("query",query);
+        console.log("query",query);
         let result = await db.executequery(query);
         console.log("data", result);
         if (result.length > 0) {
@@ -103,47 +115,72 @@ exports.updateExercise = async (req, res) => {
         if (!req.exercise_id) {
             return { status: false, msg: "Please Enter exercise Id" }
         }
+        let values = []
         let cols = ""
         if (req.exercise_name) {
-            cols += ` exercise_name="${req.exercise_name}" ,`
+            cols += ` exercise_name=? ,`
+            values.push(req.exercise_name)
         }
 
-        if (req.exercise_reps) {
-            cols += ` exercise_reps="${req.exercise_reps}" ,`
+        if (req.exercise_reps || req.exercise_reps===0) {
+            cols += ` exercise_reps=? ,`
+            values.push(req.exercise_reps)
         }
 
-        if (req.exercise_sets) {
-            cols += ` exercise_sets="${req.exercise_sets}" ,`
+        if (req.exercise_sets || req.exercise_sets===0) {
+            cols += ` exercise_sets=? ,`
+            values.push(req.exercise_sets)
         }
 
-        if (req.exercise_holds) {
-            cols += ` exercise_holds="${req.exercise_holds}" ,`
+        if (req.exercise_holds || req.exercise_holds===0) {
+            cols += ` exercise_holds=? ,`
+            values.push(req.exercise_holds)
         }
 
-        if (req.exercise_rests) {
-            cols += ` exercise_rests="${req.exercise_rests}" ,`
+        if (req.exercise_rests || req.exercise_rests===0) {
+            cols += ` exercise_rests=? ,`
+            values.push(req.exercise_rests)
         }
 
         if (req.exercise_body_part_id) {
-            cols += ` exercise_body_part_id="${req.exercise_body_part_id}" ,`
+            cols += ` exercise_body_part_id=? ,`
+            values.push(req.exercise_body_part_id)
         }
 
         if (req.exercise_video_id) {
-            cols += ` exercise_video_id="${req.exercise_video_id}" ,`
+            cols += ` exercise_video_id=? ,`
+            values.push(req.exercise_video_id)
         }
 
-        if (req.exercise_instruction_id) {
-            cols += ` exercise_instruction_id="${req.exercise_instruction_id}" ,`
+        if (req.exercise_instruction_id ) {
+            cols += ` exercise_instruction_id=? ,`
+            values.push(req.exercise_instruction_id)
+        }
+
+        if (req.exercise_time || req.exercise_time === 0) {
+            cols += ` exercise_time=? ,`
+            values.push(req.exercise_time)
+        }
+
+        if (req.isMultidirectional || req.isMultidirectional === 0) {
+            cols += ` isMultidirectional=? ,`
+            values.push(req.isMultidirectional)
+        }
+
+        if (req.isTimeControlled || req.isTimeControlled === 0) {
+            cols += ` isTimeControlled=? ,`
+            values.push(req.isTimeControlled)
         }
 
         if (req.isActive || req.isActive == 0) {
-            cols += ` isActive=${req.isActive},`
+            cols += ` isActive=?,`
+            values.push(req.isActive)
         }
 
         cols = cols.substring(0, cols.lastIndexOf(",")) + " " + cols.substring(cols.lastIndexOf(",") + 1);
-
-        let query = "UPDATE mst_exercises SET " + cols + " where exercise_id = " + req.exercise_id;
-        let data = await db.executequery(query)
+        values.push(req.exercise_id)
+        let query = "UPDATE mst_exercises SET " + cols + " where exercise_id = ?;";
+        let data = await db.executevaluesquery(query, values)
         console.log(data);
         if (data.affectedRows) {
             return { status: true, msg: 'Data Updated successfully!' };
@@ -159,7 +196,7 @@ exports.updateExercise = async (req, res) => {
 
 exports.exerciseByBodyArea = async (req, res) => {
     try {
-        console.log("exerciseByBodyArea req",req);
+        console.log("exerciseByBodyArea req", req);
         if (!req.body_area_id && !req.body_area_name) {
             return { status: false, msg: "Please Enter body_area_id or body_area_name" }
         }

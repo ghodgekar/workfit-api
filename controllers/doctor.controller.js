@@ -30,7 +30,7 @@ module.exports.doctorLogin = async (req) => {
         if (password == req.admin_password) {
             if (moment().isBefore(data[0].subscription_end_date)) {
                 return ({ status: true, data: data });
-            }else{
+            } else {
                 return ({ status: false, msg: 'Your Subscription Has Expired' });
             }
         } else {
@@ -53,11 +53,11 @@ exports.deleteDoctor = async (req, res) => {
     try {
         let id = req.params.id;
         let query = `UPDATE mst_doctors SET isActive = 2 WHERE doctor_Id = ${id}`;
-        let data = await db.executequery(query); 
-        if(data.affectedRows){
-            return ({status:true,msg:'Doctor Data Deleted Successfully.'});
+        let data = await db.executequery(query);
+        if (data.affectedRows) {
+            return ({ status: true, msg: 'Doctor Data Deleted Successfully.' });
         } else {
-            return ({status:false,err:'There was some DB issue.'});
+            return ({ status: false, err: 'There was some DB issue.' });
         }
     } catch (err) {
         console.log(err);
@@ -75,7 +75,7 @@ module.exports.addDoctor = async (req) => {
                 let ext = file.originalFilename.split('.')[1];
                 let fileName = Date.now() + '_' + file.newFilename + '.' + ext;
                 file.filepath = path.join(__dirname, '../public/uploads/images/') + fileName;
-                bodyObj[name] = fileName;
+                bodyObj[name] = "/uploads/images/" + fileName;
             }
         }
     });
