@@ -71,10 +71,10 @@ exports.exerciseList = async (req, res) => {
             }
         }
         let query = `SELECT exe.*, ROW_NUMBER() OVER (ORDER BY exe.exercise_id DESC) AS id, inst.instruction_name, bod.body_part_name, vid.video_name 
-                        FROM workfitt.mst_exercises as exe 
-                        join workfitt.mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
-                        join workfitt.mst_videos as vid on exe.exercise_video_id=vid.video_id
-                        join workfitt.mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
+                        FROM mst_exercises as exe 
+                        join mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
+                        join mst_videos as vid on exe.exercise_video_id=vid.video_id
+                        join mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
                     where (exe.isActive=1 OR exe.isActive=0) ${sort} ${limit}`;
         console.log("query",query);
         let result = await db.executequery(query);
@@ -231,10 +231,10 @@ exports.exerciseByBodyArea = async (req, res) => {
         orderBy = orderBy.substring(0, orderBy.lastIndexOf(",")) + " " + orderBy.substring(orderBy.lastIndexOf(",") + 1);
 
         let query = `SELECT exe.*, inst.instruction_name,bod.body_part_name,vid.video_name 
-                        FROM workfitt.mst_exercises as exe 
-                        join workfitt.mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
-                        join workfitt.mst_videos as vid on exe.exercise_video_id=vid.video_id
-                        join workfitt.mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
+                        FROM mst_exercises as exe 
+                        join mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
+                        join mst_videos as vid on exe.exercise_video_id=vid.video_id
+                        join mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
                     where (exe.isActive=1 OR exe.isActive=0) ${orderBy} ${limit}`;
         let result = await db.executequery(query)
         // console.log(result);
