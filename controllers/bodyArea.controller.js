@@ -20,7 +20,7 @@ module.exports.addBodyArea = async (req) => {
     let query = 'INSERT INTO mst_body_areas(body_area_name, body_part_id_arr, body_area_used_for, isActive) VALUES (?,?,?,?)'
     let values = [req.body_area_name, req.body_part_id_arr, req.body_area_used_for, 1];
     let result = await db.executevaluesquery(query, values);
-    console.log("result", result);
+    // console.log("result", result);
     if (result.insertId) {
         return { status: true, msg: "Data inserted successfully" }
     } else {
@@ -28,14 +28,14 @@ module.exports.addBodyArea = async (req) => {
     }
 }
 // getBodyPartArr("{\"0\":1,\"1\":2,\"2\":2}")
-async function getBodyPartArr(bodyPartArr) {
-    console.log({ bodyPartArr });
+async function getBodyPartArr1(bodyPartArr) {
+    // console.log({ bodyPartArr });
     bodyPartArr = JSON.parse(bodyPartArr)
-    console.log({ bodyPartArr });
+    // console.log({ bodyPartArr });
     for (const key in bodyPartArr) {
-        console.log("bodyPartArr[key]", bodyPartArr[key]);
+        // console.log("bodyPartArr[key]", bodyPartArr[key]);
         let bodyPart = await bodyPartController.getBodyPartById({ "body_part_id": bodyPartArr[key] })
-        console.log("bodyPart", bodyPart);
+        // console.log("bodyPart", bodyPart);
         bodyPartArr[key] = bodyPart?.data[0]?.body_part_name;
         // console.log("bodyPart",bodyPart);
     }
@@ -43,6 +43,20 @@ async function getBodyPartArr(bodyPartArr) {
     // console.log(JSON.stringify(bodyPartArr));
     return JSON.stringify(bodyPartArr)
 
+}
+
+async function getBodyPartArr(bodyPartIdArr, bodyPartArr) {
+    bodyPartIdArr = JSON.parse(bodyPartIdArr)
+    // console.log({ bodyPartArr });
+    for (const key in bodyPartIdArr) {
+        // console.log("bodyPartArr[key]", bodyPartIdArr[key]);
+        // console.log(bodyPartArr);
+        let bodyPart = bodyPartArr.find(part => { return part.body_part_id == bodyPartIdArr[key] })
+        // console.log("bodyPart", bodyPart.body_part_name);
+        bodyPartIdArr[key] = bodyPart?.body_part_name;
+        // console.log("bodyPart",bodyPart);
+    }
+    return JSON.stringify(bodyPartIdArr)
 }
 
 exports.bodyAreaList = async (req, res) => {
@@ -60,10 +74,12 @@ exports.bodyAreaList = async (req, res) => {
         // console.log("query",query);
         let result = await db.executequery(query);
 
-        console.log("data", result);
+        // console.log("data", result);
+        let bodyPartRes = await bodyPartController.bodyPartList({query:{}})
+        let bodyPartArr = bodyPartRes.data
         if (result.length > 0) {
             for (let i = 0; i < result.length; i++) {
-                result[i].body_part_name_arr = await getBodyPartArr(result[i].body_part_id_arr)
+                result[i].body_part_name_arr = await getBodyPartArr(result[i].body_part_id_arr, bodyPartArr)
             }
             return { status: true, data: result };
         } else {
@@ -127,7 +143,7 @@ exports.updateBodyArea = async (req, res) => {
 
         let query = "UPDATE mst_body_areas SET " + cols + " where body_area_id = ?";
         let data = await db.executevaluesquery(query, values)
-        console.log(data);
+        // console.log(data);
         if (data.affectedRows) {
             return { status: true, msg: 'Data Updated successfully!' };
         } else {
@@ -169,9 +185,11 @@ exports.bodyAreaByUsedFor = async (req, res) => {
         let result = await db.executequery(query);
 
         // console.log("data", result);
+        let bodyPartRes = await bodyPartController.bodyPartList({query:{}})
+        let bodyPartArr = bodyPartRes.data
         if (result.length > 0) {
             for (let i = 0; i < result.length; i++) {
-                result[i].body_part_name_arr = await getBodyPartArr(result[i].body_part_id_arr)
+                result[i].body_part_name_arr = await getBodyPartArr(result[i].body_part_id_arr,bodyPartArr)
             }
             return { status: true, data: result };
         } else {

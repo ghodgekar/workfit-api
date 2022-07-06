@@ -609,8 +609,20 @@ module.exports.getPrescriptionById = async (req, res) => {
 // Doctor
 module.exports.addDoctor = async (req, res) => {
     try {
-        let addDoctor = await doctorController.addDoctor(req)
-        res.send(addDoctor)
+        let addDoctor = await doctorController.addDoctor(req,res)
+        console.log("addDoctor");
+        return (addDoctor)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
+
+module.exports.doctorLogin = async (req, res) => {
+    try {
+        let doctorLogin = await doctorController.doctorLogin(req.body,res)
+        console.log("doctorLogin");
+        res.send(doctorLogin)
     } catch (error) {
         console.log("err", error);
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })

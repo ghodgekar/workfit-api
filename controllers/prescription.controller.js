@@ -36,52 +36,61 @@ async function validateAddRequest(req) {
 
 module.exports.addPrescription = async (req) => {
     console.log("Prescription Request", req)
-    let email_sent = 0
+    let email_sent = 0, prescription_id
     let validation = await validateAddRequest(req);
     if (!validation.status) return validation
 
     let patientObj = await processPatient(req)
     if (req.exercise_arr && req.exercise_arr.length > 0) {
-        for (let i = 0; i < req.exercise_arr.length; i++) {
-            req.exercise_arr[i].start_date=moment().format("yyyy-MM-DD")
-            req.exercise_arr[i].end_date=moment().add(Number(req.exercise_arr[i].exercise_days), 'D').format('YYYY-MM-DD')
-            let email = req.patient_email.replace(/\./g, "_")
-            let fileName = email + "_" + req.exercise_arr[i].exercise_name + "_" + moment().format('MMMM_DD_YYYY') + '_audio.mp3';
-            await generateAudio(req.exercise_arr[i], fileName)
-            req.exercise_arr[i].audioFilePath ="/uploads/audios/"+ fileName
-            let videoObj = await getVideoObj(req.exercise_arr[i].exercise_video_id);
-            req.exercise_arr[i].videoObj = videoObj;
-            let instructionObj = await getInstructionObj(req.exercise_arr[i].exercise_instruction_id)
-            req.exercise_arr[i].instructionObj = instructionObj
-            // return true
+        if (req.exercise_arr && req.exercise_arr.length > 0) {
+            for (let i = 0; i < req.exercise_arr.length; i++) {
+                req.exercise_arr[i].start_date = moment().format("yyyy-MM-DD")
+                req.exercise_arr[i].end_date = moment().add(Number(req.exercise_arr[i].exercise_days), 'D').format('YYYY-MM-DD')
+                let email = req.patient_email.replace(/\./g, "_")
+                let fileName = email + "_" + req.exercise_arr[i].exercise_name + "_" + moment().format('MMMM_DD_YYYY') + '_audio.mp3';
+                await generateAudio(req.exercise_arr[i], fileName)
+                req.exercise_arr[i].audioFilePath = "/uploads/audios/" + fileName
+                let videoObj = await getVideoObj(req.exercise_arr[i].exercise_video_id);
+                req.exercise_arr[i].videoObj = videoObj;
+                let instructionObj = await getInstructionObj(req.exercise_arr[i].exercise_instruction_id)
+                req.exercise_arr[i].instructionObj = instructionObj
+                // return true
+            }
+        }
+        // console.log("req.exercise_arr", req.exercise_arr);
+        // let adjunctArr = await getAdjuncts(req.adjunct);
+        // req.adjunct = adjunctArr
+
+        prescription_id = await addPrescriptionToDb(req, patientObj)
+        if (req.exercise_arr && req.exercise_arr.length > 0) {
+            for (exercise of req.exercise_arr) {
+                insertExerciseTrack(exercise, prescription_id)
+            }
         }
     }
-    console.log("req.exercise_arr", req.exercise_arr);
-    // let adjunctArr = await getAdjuncts(req.adjunct);
-    // req.adjunct = adjunctArr
 
-    let prescription_id = await addPrescriptionToDb(req, patientObj)
-    if (req.exercise_arr && req.exercise_arr.length > 0) {
-        for (exercise of req.exercise_arr) {
-            insertExerciseTrack(exercise, prescription_id)
-        }
+    if ((req.exercise_arr && req.exercise_arr.length > 0) || req.generate_bill) {
+        sendMail(req, prescription_id) 
     }
 
+    return ({ status: true, prescription_id: prescription_id, msg: "Prescription sent successfully" });
+    // console.log("result", result);
 
-    // console.log("req.adjunct", req.adjunct);
+}
 
+async function sendMail(req, prescription_id) {
     let html = await generateEmailTemplate(req, prescription_id)
-
+    let subject= `E-Prescription For- ${req.patient_name} `
     var mailOptions = {
         from: config_url.smtp.auth.user,
         to: req.patient_email,
-        subject: 'Prescription',
+        subject: subject,
         html: html
     };
-    if(req.generate_bill){
+    if (req.generate_bill) {
         let pdfBuffer = await generatePDF(req);
-        if(pdfBuffer){
-            mailOptions.attachments = { filename: "invoice_"+Date.now()+".pdf", content: pdfBuffer };
+        if (pdfBuffer) {
+            mailOptions.attachments = { filename: "Bill.pdf", content: pdfBuffer };
         }
     }
 
@@ -102,14 +111,9 @@ module.exports.addPrescription = async (req) => {
         } else {
             console.log('Email sent: ' + info.response);
             updateEmailSent(prescription_id)
-            email_sent = 1
             return true
         }
     });
-
-    return ({ status: true, prescription_id: prescription_id, email_sent: email_sent });
-    // console.log("result", result);
-
 }
 
 async function getVideoObj(video_id) {
@@ -132,7 +136,6 @@ async function getAdjuncts(adjunctArr) {
         console.log("adjunct---------------------", adjunct);
         arr.push(adjunct.data[0])
     }
-
     return arr
 }
 
@@ -142,57 +145,24 @@ async function updateEmailSent(prescription_id) {
     await db.executevaluesquery(query, values)
 }
 
-// async function generateEmailTemplate(req, prescription_id) {
-//     let doctorData = await getDoctorData(req.doctor_id)
-//     let selectedTemplate = await getTemplate()
-//     let html
-//     if (doctorData && selectedTemplate) {
-//         html = selectedTemplate.template_content;
-//         html = html.replace("{{doctor_logo}}", config_url.apiurl + 'uploads/images/' + doctorData.doctor_logo);
-//         html = html.replace("{{doctor_sign}}", config_url.apiurl + 'uploads/images/' + doctorData.doctor_sign);
-//         html = html.replace("{{doctor_name}}", doctorData.doctor_name);
-//         // html = html.replace("{{doctor_address}}", doctorData.doctor_address);
-//         html = html.replace("{{patient_name}}", req.patient_name);
-//         html = html.replace("{{patient_age}}", req.patient_age);
-//         html = html.replace("{{patient_gender}}", req.patient_gender);
-//         html = html.replace("{{prescription_c_o}}", req.prescription_c_o);
-//         html = html.replace("{{doctor_advice}}", req.doctor_advice);
-//         html = html.replace("{{instruction_note}}", req.instruction_note);
-//         let adjunct = "<ul id='adjunct_list'>"
-//         req.adjunct.forEach(element => {
-//             adjunct += `<li class="adjunct_li"> ${element.adjunct_name} ${element.adjunct_time ? '- ' + element.adjunct_time : ""} ` +
-//                 "[<a href=" + config_url.adminurl + "ViewInstruction?instruction_id=" + element.adjunct_instruction_id
-//                 + ">Instruction Notes</a>]</li>"
-//         });
-//         adjunct += "</ul>"
-//         html = html.replace("{{adjunct}}", adjunct);
-//         let exercise_arr = "";
-//         req.exercise_arr.forEach((exercise, id) => {
-//             exercise_arr += "<div class='exercise'>";
-//             exercise_arr += "<h5>" + (id + 1) + ")   " + exercise.exercise_name + "</h5>"
-//             exercise_arr += "<a href=" + config_url.adminurl +
-//                 "exerciseTrack?exercise_name=" + exercise.exercise_name +
-//                 "&prescription_id=" + prescription_id + "&video_id=" + exercise.video_id + ">Perform Exercise</a>"
-//             exercise_arr += "</div>";
-//         })
-//         html = html.replace("{{exercise_arr}}", exercise_arr);
-//         html = html.replace("{{doctor_sign}}", config_url.apiurl + 'uploads/images/' + doctorData.doctor_sign);
-//     }
-//     return html
-
-// }
 
 async function generateEmailTemplate(req, prescription_id) {
     let selectedTemplate = await getTemplate(config_url.template.prescription_email)
+
     let html = selectedTemplate.template_content;
-    let prescription_link = config_url.adminurl + "Prescription?prescription_id=" + prescription_id
+    let prescription_link = ""
+    if (req.exercise_arr && req.exercise_arr.length > 0) {
+        prescription_link += "<p>Please click on the link below to find your prescription.</p>";
+        prescription_link += config_url.adminurl + "Prescription?prescription_id=" + prescription_id;
+    }
     html = html.replace("{{prescription_link}}", prescription_link)
+
     return html
 }
 
 async function getTemplate(code) {
     let query = `select template_content from mst_email_templates where isActive=? AND template_code=?`
-    let values = [1,code]
+    let values = [1, code]
     let templateData = await db.executevaluesquery(query, values)
     if (templateData && templateData.length) return templateData[0]
     return false
@@ -209,8 +179,8 @@ async function getDoctorData(doctorId) {
 
 async function addPrescriptionToDb(req, patient_obj) {
     let query = `INSERT INTO mst_prescription
-      (doctor_id, patient_id, prescription_c_o, date_of_evaluation, doctor_advice, instruction_note, exercise_arr, doctor_note, adjunct,patient_obj)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`;
+      (doctor_id, patient_id, prescription_c_o, date_of_evaluation, doctor_advice, instruction_note, exercise_arr, doctor_note, adjunct, patient_obj, scales_obj)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )`;
     let values = [
         req.doctor_id,
         patient_obj.patient_id,
@@ -221,7 +191,8 @@ async function addPrescriptionToDb(req, patient_obj) {
         req.exercise_arr && req.exercise_arr.length ? JSON.stringify(Object.assign({}, req.exercise_arr)) : null,
         req.doctor_note,
         req.adjunct && req.adjunct.length ? JSON.stringify(Object.assign({}, req.adjunct)) : null,
-        JSON.stringify(patient_obj)
+        JSON.stringify(patient_obj),
+        JSON.stringify(req.scales_obj)
     ];
     let addPrescription = await db.executevaluesquery(query, values);
     return addPrescription.insertId ? addPrescription.insertId : false
@@ -254,13 +225,13 @@ async function processPatient(req) {
     } else {
         let insertPatient = 'INSERT INTO mst_patient (patient_name, patient_age, patient_gender, patient_email, doctor_id, isActive) VALUES (?,?,?,?,?,?)';
         Value1.push(1)
-        let insertPatientData = await db.executevaluesquery(insertPatient,Value1);
+        let insertPatientData = await db.executevaluesquery(insertPatient, Value1);
         patient = {
             patient_name: req.patient_name,
             patient_age: req.patient_age,
             patient_gender: req.patient_gender,
             patient_email: req.patient_email,
-            patient_id: insertPatientData.insertId 
+            patient_id: insertPatientData.insertId
         }
 
         return patient;
@@ -269,23 +240,41 @@ async function processPatient(req) {
 }
 
 async function generateAudio(exercise, fileName) {
-    // let text = `Exercise name ${exercise.exercise_name}, ${exercise.reps} reps, ${exercise.sets} sets and hold for ${exercise.hold}`;
-    // let text = `gasfd jshdc  hdhdb jhbx jshss cxcbhdbds v vfvjsfv fnv vn s fnsvhsbvn vwj vwvwj vwjvbwj vsd vnsdvbwr vsd v wbvnd v`;
+
     let text = `<speak>`
-    for (let i = 1; i <= parseInt(exercise.sets); i++) {
-        text += `Take your position <break time="3s"/> and start in 3. 2. 1.<break time="1s"/>`
-        for (let j = 1; j <= parseInt(exercise.holds); j++) {
-            text += `${j}. hold <break time="1s"/>`
-            for (let k = 1; k <= parseInt(exercise.reps); k++) {
-                text += `${k}. <break time="0.5s"/> `
+    if (exercise.isTimeControlled) {
+        for (let i = 1; i <= parseInt(exercise.exercise_reps); i++) {
+            text += `Take your position <break time="5s"/> your time starts in 3. 2. 1. and go.<break time="1s"/>`
+            for (let j = 1; j <= parseInt(exercise.exercise_time); j++) {
+                text += `${j}.<break time="0.7s"/>`
             }
-            text += ` relax<break time="1s"/>`
+            if (parseInt(exercise.exercise_rests) > 0) {
+                text += `and relax take rest for ${exercise.exercise_rests} counts. <break time="1s"/>`
+            }
+            for (let l = 1; l <= parseInt(exercise.exercise_rests); l++) {
+                text += `${l}.<break time="1s"/>`
+            }
+            if (i < parseInt(exercise.exercise_reps)) {
+                text += `.time for next round<break time="0.5s"/>`
+            }
         }
-        if (parseInt(exercise.rests) > 0) {
-            text += `rest for ${exercise.rests} counts <break time="1s"/>`
-        }
-        for (let l = 1; l <= parseInt(exercise.rests); l++) {
-            text += `${l}<break time="1s"/>`
+
+    } else {
+        for (let i = 1; i <= parseInt(exercise.exercise_sets); i++) {
+            text += `Take your position <break time="5s"/> and start in 3. 2. 1.<break time="1s"/>`
+            for (let j = 1; j <= parseInt(exercise.exercise_holds); j++) {
+                text += `${j}. hold <break time="1s"/>`
+                for (let k = 1; k <= parseInt(exercise.exercise_reps); k++) {
+                    text += `${k}. <break time="0.5s"/> `
+                }
+                text += ` relax<break time="1s"/>`
+            }
+            if (parseInt(exercise.exercise_rests) > 0) {
+                text += `rest for ${exercise.exercise_rests} counts <break time="1s"/>`
+            }
+            for (let l = 1; l <= parseInt(exercise.exercise_rests); l++) {
+                text += `${l}<break time="1s"/>`
+            }
         }
     }
     text += `play the next exercise </speak>`
@@ -320,62 +309,118 @@ async function ssmlToAudio(ssmlText, outFile) {
     // console.log('Audio content written to file ' + outFile);
 }
 
-async function generatePDF(req){
+async function padBillNo(billNo) {
+    var s = billNo.toString();
+    let pads = "0000000000"
+    return pads.substring(0, pads.length - s.length) + s;
+};
+
+async function getBillNumber(doctor_id) {
+    let query = "select count(prescription_id) as bill_no from mst_prescription where doctor_id=?"
+    let values = [doctor_id]
+    let result = await db.executevaluesquery(query, values)
+    let billNo = await padBillNo(result[0].bill_no)
+    return billNo
+}
+
+async function generatePDF(req) {
     try {
         let selectedTemplate = await getTemplate(config_url.template.invoice);
-        if(!selectedTemplate) throw `${config_url.template.invoice} tamplate issue`;
+        if (!selectedTemplate) throw `${config_url.template.invoice} template issue`;
         let doctorData = await getDoctorData(req.doctor_id);
-        if(!doctorData) throw `${req.doctor_id} doesnt exist`;
-        
+        if (!doctorData) throw `${req.doctor_id} doesnt exist`;
+
         let html = selectedTemplate.template_content;
-        
-        html = html.replace("{{doctor_logo}}", doctorData.doctor_logo ? config_url.apiurl + 'uploads/images/' + doctorData.doctor_logo : '');
-        html = html.replace("{{bill_invoice_to}}", req.bill.bill_invoice_to ? req.bill.bill_invoice_to : '');
+
+        html = html.replace("{{doctor_logo}}", doctorData.doctor_logo ? config_url.apiurl + doctorData.doctor_logo : '');
+        html = html.replace("{{bill_invoice_to}}", req.bill.bill_invoice_to ?
+            `<div class="flexClass">
+                <div></div>
+                <div>
+                    <h3 class="compHead bodyFont">Invoice to -</h3>
+                    <p class="compName bodyFont">${req.bill.bill_invoice_to}</p>
+                </div>
+             </div>`
+            : '');
         html = html.replace("{{bill_patient_name}}", req.bill.bill_patient_name ? req.bill.bill_patient_name : '');
         html = html.replace("{{bill_patient_age}}", req.bill.bill_patient_age ? req.bill.bill_patient_age : '');
         html = html.replace("{{bill_patient_gender}}", req.bill.bill_patient_gender ? req.bill.bill_patient_gender : '');
-        html = html.replace("{{bill_patient_address}}", req.bill.bill_patient_address ? req.bill.bill_patient_address : '');
+        html = html.replace("{{bill_patient_address}}", req.bill.bill_patient_address ? `<p> <span class="bodyFont">Address - ${req.bill.bill_patient_address}</span></p>` : '');
         html = html.replace("{{bill_date_of_evaluation}}", req.bill.bill_date_of_evaluation ? moment(req.bill.bill_date_of_evaluation).format('DD/MM/YYYY') : '');
         html = html.replace("{{bill_time_evaluation}}", req.bill.bill_time_evaluation ? req.bill.bill_time_evaluation : '');
-        html = html.replace("{{bill_no}}", 'WF' + Date.now());
-        let consultation_charge = req.bill.is_consultation_charge ? doctorData.consultation_charge ? doctorData.consultation_charge : '0' : '0';
-        html = html.replace("{{consultation_charge}}", req.bill.is_consultation_charge ? doctorData.consultation_charge ? doctorData.consultation_charge : '0' : '0');
-        let treatment_charge = 0;
-        if(req.bill.bill_treatment_type == 1){
-            treatment_charge = doctorData.treatment1_charge ? doctorData.treatment1_charge : '0';
-            html = html.replace("{{treatment_charge}}", doctorData.treatment1_charge ? doctorData.treatment1_charge : '0');
-        } else if (req.bill.bill_treatment_type == 2){
-            treatment_charge = doctorData.treatment2_charge ? doctorData.treatment2_charge : '0';
-            html = html.replace("{{treatment_charge}}", doctorData.treatment2_charge ? doctorData.treatment2_charge : '0');
-        } else if (req.bill.bill_treatment_type == 3){
-            treatment_charge = doctorData.treatment3_charge ? doctorData.treatment3_charge : '0';
-            html = html.replace("{{treatment_charge}}", doctorData.treatment3_charge ? doctorData.treatment3_charge : '0');
-        } else {
-            html = html.replace("{{treatment_charge}}", '0');
+
+        let billNumber = await getBillNumber(req.doctor_id)
+        html = html.replace("{{bill_no}}", billNumber);
+
+        let consultation_charges = req.bill.is_consultation_charge ? doctorData.consultation_charge ? doctorData.consultation_charge : '0' : '0';
+        html = html.replace("{{consultation_charge}}", consultation_charges);
+
+        let treatment_charges = '0';
+        if (req.bill.bill_treatment_type == 1) {
+            treatment_charges = doctorData.treatment1_charge ? doctorData.treatment1_charge : '0';
+        } else if (req.bill.bill_treatment_type == 2) {
+            treatment_charges = doctorData.treatment2_charge ? doctorData.treatment2_charge : '0';
+        } else if (req.bill.bill_treatment_type == 3) {
+            treatment_charges = doctorData.treatment3_charge ? doctorData.treatment3_charge : '0';
         }
+        let treatment_charge_copy = treatment_charges
+        if (req.bill.bill_days > 1) {
+            treatment_charges += " X " + req.bill.bill_days
+        }
+        html = html.replace("{{treatment_charge}}", treatment_charges);
+
         let bill_modality_charges = req.bill.bill_modality_charges ? req.bill.bill_modality_charges : '0';
-        html = html.replace("{{bill_modality_charges}}", req.bill.bill_modality_charges ? req.bill.bill_modality_charges : '0');
-        let total = parseInt(consultation_charge) + parseInt(treatment_charge) + parseInt(bill_modality_charges)
+        let bill_modality_charges_copy = bill_modality_charges
+        if (req.bill.bill_days > 1) {
+            bill_modality_charges += " X " + req.bill.bill_days
+        }
+        html = html.replace("{{bill_modality_charge}}", bill_modality_charges);
+
+        let total = parseInt(consultation_charges) + (parseInt(treatment_charge_copy) * parseInt(req.bill.bill_days)) + (parseInt(bill_modality_charges_copy) * parseInt(req.bill.bill_days))
         html = html.replace("{{total}}", total);
-        html = html.replace("{{bill_discount}}", req.bill.bill_discount ? req.bill.bill_discount : '0');
+
+
+        html = html.replace("{{bill_discount}}",
+            req.bill.bill_discount ?
+                `<tr>
+                    <td class="columnleft discCol" colspan="2"> <b>Discount</b> </td>
+                    <td class="columnRight"> ${req.bill.bill_discount} % </td>
+                </tr>`
+                :
+                ""
+        );
         let total_amount = 0;
-        if(!req.bill.bill_discount || req.bill.bill_discount != '0'){
+        if (!req.bill.bill_discount || req.bill.bill_discount != '0') {
             let percent = parseInt(total) * (parseInt(req.bill.bill_discount) / 100);
             total_amount = parseInt(total) - percent;
         } else {
             total_amount = parseInt(total)
         }
         html = html.replace("{{total_amount}}", total_amount.toFixed(2));
-        html = html.replace("{{doctor_sign}}", doctorData.doctor_sign ? config_url.apiurl + 'uploads/images/' + doctorData.doctor_sign : '');
+        html = html.replace("{{doctor_sign}}", doctorData.doctor_sign ? config_url.apiurl + doctorData.doctor_sign : '');
         html = html.replace("{{doctor_name}}", doctorData.doctor_name ? doctorData.doctor_name : '');
-        
+        html = html.replace("{{doctor_name}}", doctorData.doctor_name ? doctorData.doctor_name : '');
+
+        html = html.replace("{{doctor_registration_number}}",
+            doctorData.registration_number ?
+                `<p id="doctorName">
+            <span>Registration No. -</span><br />
+            <span>${doctorData.registration_number}</span>
+        </p>` : '');
+
+
+        let options = {
+            "height": "10in",
+            "width": "8in",
+        }
+
         return new Promise((resolve, reject) => {
-            htmlPDF.create(html).toBuffer((err, buffer) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(buffer);
-              }
+            htmlPDF.create(html, options).toBuffer((err, buffer) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(buffer);
+                }
             });
         });
     } catch (error) {
@@ -390,7 +435,7 @@ exports.getPrescriptionById = async (req, res) => {
             return { status: false, msg: "please enter prescription id" }
         }
         let values = [parseInt(req.query.prescription_id)]
-        let query = `SELECT MP.*, MD.doctor_name, MD.doctor_username, MD.doctor_email, MD.doctor_mob, MPT.patient_name, MPT.patient_email FROM mst_prescription as MP JOIN mst_doctors as MD on MP.doctor_id = MD.doctor_Id JOIN mst_patient as MPT on MP.patient_id = MPT.patient_id WHERE MP.prescription_id = ?`;
+        let query = `SELECT MP.*, MD.doctor_name, MD.doctor_username, MD.doctor_email, MD.doctor_mobile, MPT.patient_name, MPT.patient_email FROM mst_prescription as MP JOIN mst_doctors as MD on MP.doctor_id = MD.doctor_Id JOIN mst_patient as MPT on MP.patient_id = MPT.patient_id WHERE MP.prescription_id = ?`;
         let data = await db.executevaluesquery(query, values);
         if (data.length > 0) {
             return { status: true, data: data };
