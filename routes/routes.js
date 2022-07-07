@@ -110,7 +110,7 @@ router.get("/getPrescriptionById",middleware.getPrescriptionById)
 // Prescription
 
 // Doctor
-router.post("/addDoctor",doctorController.addDoctor)
+router.post("/addDoctor",middleware.addDoctor)
 router.post("/doctorLogin",middleware.doctorLogin)
 // Doctor
 

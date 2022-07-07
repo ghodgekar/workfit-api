@@ -7,7 +7,7 @@ const fs = require('fs');
 
 
 async function validateLoginRequest(req) {
-    console.log("request",req);
+    console.log("request", req);
     if (!req.doctor_username) {
         return { status: false, msg: 'Please Enter Username' };
     }
@@ -61,22 +61,22 @@ async function validateAddRequest(req) {
     //     specialisation: 'Test',
     //     subscription: '6-month - 3000'
     // } 
-    
-    console.log("req.doctor_email",req);
 
-    if (!req.doctor_mobile || req.doctor_mobile.length<10) {
+    console.log("req.doctor_email", req);
+
+    if (!req.doctor_mobile || req.doctor_mobile.length < 10) {
         return { status: false, msg: "Please Enter Valid Mobile Number" }
     }
-    if (!req.doctor_name ) {
+    if (!req.doctor_name) {
         return { status: false, msg: "Please Enter Doctor Name" }
     }
-    if (!req.doctor_username ) {
+    if (!req.doctor_username) {
         return { status: false, msg: "Please Enter Doctor Username" }
     }
     if (!req.doctor_password) {
         return { status: false, msg: "Please Enter Doctor Password" }
     }
-    if(await checkUsername(req.doctor_username)){
+    if (await checkUsername(req.doctor_username)) {
         return { status: false, msg: "Username is Already Present." }
     }
     if (!req.doctor_email) {
@@ -101,11 +101,11 @@ exports.deleteDoctor = async (req, res) => {
     }
 }
 
-module.exports.addDoctor =  async (req,res) => {
+module.exports.addDoctor = async (req, res) => {
     let bodyObj = {}
     var form = await new formidable.IncomingForm();
     form.parse(req);
-    
+
     form.on('fileBegin', function (name, file) {
         if (file.originalFilename != '' && file.originalFilename != undefined && file.originalFilename != null) {
             if (file.mimetype && file.mimetype.includes('image')) {
@@ -116,58 +116,65 @@ module.exports.addDoctor =  async (req,res) => {
             }
         }
     });
+
     form.on('field', function (name, value) {
         bodyObj[name] = value;
-        console.log("bodyObj",name, value);
+        console.log("bodyObj", name, value);
     });
+
     form.on('error', (err) => {
-        res.send({ status: false, err: err })
+        return ({ status: false, err: err })
     });
 
-    form.on('end', async function () {
-        console.log("i am heree");
-        let validation = await validateAddRequest(bodyObj);
-        console.log("validation",validation);
-        if (!validation.status) {
-            if (!res.headersSent) {
-            if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
-            if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
+    return new Promise(function (resolve, reject) {
+        form.on('end', async function () {
+            console.log("i am heree");
+            let validation = await validateAddRequest(bodyObj);
+            console.log("validation", validation);
+            if (!validation.status) {
+                if (!res.headersSent) {
+                    if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
-            res.send(validation)
+                    if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
+
+                    res.send(validation)
+                }
+            } else {
+                if (!res.headersSent) {
+
+                    bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
+                    bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
+                    let subscriptionObject = await processSubscription(bodyObj.subscription)
+                    let query = `INSERT INTO mst_doctors
+            (doctor_name, doctor_username, doctor_email, doctor_mobile, doctor_password, doctor_degree, specialisation, doctor_logo, doctor_sign, subscription_type,
+            subscription_start_date, subscription_end_date, doctor_address, registration_number, consultation_charge, treatment1_charge, treatment2_charge, treatment3_charge, isActive) 
+            VALUES 
+            (?,?,?,?,?,?,?,?,?,?,
+             ?,?,?,?,?,?,?,?,?)`;//19
+
+                    let values = [
+                        bodyObj.doctor_name, bodyObj.doctor_username, bodyObj.doctor_email, bodyObj.doctor_mobile, bodyObj.doctor_password, bodyObj.doctor_degree, bodyObj.specialisation, bodyObj.doctor_logo, bodyObj.doctor_sign, subscriptionObject.subscription_type,
+                        subscriptionObject.subscription_start_date, subscriptionObject.subscription_end_date, bodyObj.doctor_address, bodyObj.registration_number, parseInt(bodyObj.consultation_charge), parseInt(bodyObj.treatment1_charge), parseInt(bodyObj.treatment2_charge), parseInt(bodyObj.treatment3_charge), 1
+                    ]//19
+                    let result = await db.executevaluesquery(query, values)
+                    console.log("add doctor res", result);
+                    if (result.insertId) {
+                        resolve({ status: true, msg: "Data inserted successfully" })
+                    } else {
+                        if (bodyObj.doctor_logo) {
+                            deleteFile(bodyObj.doctor_logo);
+                        }
+                        if (bodyObj.doctor_sign) {
+                            deleteFile(bodyObj.doctor_sign);
+                        }
+                        resolve({ status: false, msg: "Oop's Database Issue Occured" })
+                    }
+
+                }
+
             }
-        }else{
-            if (!res.headersSent) {
-
-        bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
-        bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
-        let subscriptionObject = await processSubscription(bodyObj.subscription)
-        let query = `INSERT INTO mst_doctors
-        (doctor_name, doctor_username, doctor_email, doctor_mobile, doctor_password, doctor_degree, specialisation, doctor_logo, doctor_sign, subscription_type,
-        subscription_start_date, subscription_end_date, doctor_address, registration_number, consultation_charge, treatment1_charge, treatment2_charge, treatment3_charge, isActive) 
-        VALUES 
-        (?,?,?,?,?,?,?,?,?,?,
-         ?,?,?,?,?,?,?,?,?)`;//19
-
-        let values = [
-            bodyObj.doctor_name, bodyObj.doctor_username, bodyObj.doctor_email, bodyObj.doctor_mobile, bodyObj.doctor_password, bodyObj.doctor_degree, bodyObj.specialisation, bodyObj.doctor_logo, bodyObj.doctor_sign, subscriptionObject.subscription_type,
-            subscriptionObject.subscription_start_date, subscriptionObject.subscription_end_date, bodyObj.doctor_address, bodyObj.registration_number, parseInt(bodyObj.consultation_charge), parseInt(bodyObj.treatment1_charge), parseInt(bodyObj.treatment2_charge), parseInt(bodyObj.treatment3_charge), 1
-        ]//19
-        let result = await db.executevaluesquery(query, values)
-        console.log("add doctor res",result);
-        if (result.insertId) {
-            res.send({ status: true, msg: "Data inserted successfully" })
-        } else {
-            if (bodyObj.doctor_logo) {
-                deleteFile(bodyObj.doctor_logo);
-            }
-            if (bodyObj.doctor_sign) {
-                deleteFile(bodyObj.doctor_sign);
-            }
-            res.send({ status: false, msg: "Oop's Database Issue Occured" })
-        }
-    }
-    }
+        })
     })
 
     // console.log("resp",resp);

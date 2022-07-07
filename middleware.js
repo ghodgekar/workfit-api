@@ -611,7 +611,7 @@ module.exports.addDoctor =  async (req, res) => {
     try {
         let addDoctor = await doctorController.addDoctor(req,res)
         console.log("addDoctor",addDoctor);
-        return (addDoctor)
+        res.send (addDoctor)
     } catch (error) {
         console.log("err", error);
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
