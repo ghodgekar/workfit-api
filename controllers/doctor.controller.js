@@ -130,6 +130,8 @@ module.exports.addDoctor =   (req,res) => {
     console.log("i am heree6");
 
     form.on('end', async function () {
+        console.log("i am heree7");
+        console.log(bodyObj)
         let validation = await validateAddRequest(bodyObj);
         console.log("validation",validation);
         if (!validation.status) {
