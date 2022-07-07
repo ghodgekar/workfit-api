@@ -103,7 +103,7 @@ exports.deleteDoctor = async (req, res) => {
 
 module.exports.addDoctor =  async (req,res) => {
     let bodyObj = {}
-    var form =  new formidable.IncomingForm();
+    var form = await new formidable.IncomingForm();
     form.parse(req);
     
     form.on('fileBegin', function (name, file) {
@@ -118,7 +118,7 @@ module.exports.addDoctor =  async (req,res) => {
     });
     form.on('field', function (name, value) {
         bodyObj[name] = value;
-        console.log("bodyObj",bodyObj);
+        console.log("bodyObj",name, value);
     });
     form.on('error', (err) => {
         res.send({ status: false, err: err })
@@ -166,10 +166,7 @@ module.exports.addDoctor =  async (req,res) => {
             }
             res.send({ status: false, msg: "Oop's Database Issue Occured" })
         }
-
-        
     }
-
     }
     })
 
