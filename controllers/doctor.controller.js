@@ -101,9 +101,9 @@ exports.deleteDoctor = async (req, res) => {
     }
 }
 
-module.exports.addDoctor =   (req,res) => {
+module.exports.addDoctor =   async (req,res) => {
     let bodyObj = {}
-    var form =  new formidable.IncomingForm();
+    var form =  await new formidable.IncomingForm();
     console.log("i am heree");
     form.parse(req);
     form.on('fileBegin', function (name, file) {
@@ -135,14 +135,16 @@ module.exports.addDoctor =   (req,res) => {
         let validation = await validateAddRequest(bodyObj);
         console.log("validation",validation);
         if (!validation.status) {
+            if (!res.headersSent) {
 
             if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
             if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
 
             res.send(validation)
-        }
-
+            }
+        }else{
+            if (!res.headersSent) {
         bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
         bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
         let subscriptionObject = await processSubscription(bodyObj.subscription)
@@ -170,6 +172,8 @@ module.exports.addDoctor =   (req,res) => {
             }
             res.send({ status: false, msg: "Oop's Database Issue Occured" })
         }
+    }
+    }
     })
 
     // console.log("resp",resp);
