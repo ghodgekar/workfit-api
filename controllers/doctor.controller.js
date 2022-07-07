@@ -167,6 +167,7 @@ module.exports.addDoctor =  async (req,res) => {
             res.send({ status: false, msg: "Oop's Database Issue Occured" })
         }
 
+        
     }
 
     }

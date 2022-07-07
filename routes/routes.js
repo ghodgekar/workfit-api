@@ -3,6 +3,7 @@ const router=express.Router();
 const bodyParser=require("body-parser");
 let adminController = require("../controllers/admin.controller");
 const middleware=require("../middleware")
+const doctorController = require("../controllers/doctor.controller")
 
 router.use(bodyParser.urlencoded({ extended: true }))
 router.use(bodyParser.json());
@@ -109,7 +110,7 @@ router.get("/getPrescriptionById",middleware.getPrescriptionById)
 // Prescription
 
 // Doctor
-router.post("/addDoctor",middleware.addDoctor)
+router.post("/addDoctor",doctorController.addDoctor)
 router.post("/doctorLogin",middleware.doctorLogin)
 // Doctor
 
