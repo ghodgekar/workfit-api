@@ -122,14 +122,14 @@ module.exports.addDoctor =  async (req,res) => {
         res.send({ status: false, err: err })
     });
 
-    let resp=form.on('end', async function () {
+    form.on('end', async function () {
         let validation = await validateAddRequest(bodyObj);
         console.log("validation",validation);
         if (!validation.status) {
 
-            if (bodyObj.doctor_logo) deleteFile(bodyObj.doctor_logo);
+            if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
-            if (bodyObj.doctor_sign) deleteFile(bodyObj.doctor_sign);
+            if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
 
             res.send(validation)
         }
@@ -149,7 +149,7 @@ module.exports.addDoctor =  async (req,res) => {
             subscriptionObject.subscription_start_date, subscriptionObject.subscription_end_date, bodyObj.doctor_address, bodyObj.registration_number, parseInt(bodyObj.consultation_charge), parseInt(bodyObj.treatment1_charge), parseInt(bodyObj.treatment2_charge), parseInt(bodyObj.treatment3_charge), 1
         ]//19
         let result = await db.executevaluesquery(query, values)
-console.log("add doctor res",result);
+        console.log("add doctor res",result);
         if (result.insertId) {
             res.send({ status: true, msg: "Data inserted successfully" })
         } else {
@@ -163,9 +163,9 @@ console.log("add doctor res",result);
         }
     })
 
-    console.log("resp",resp);
+    // console.log("resp",resp);
 
-    console.log("form",form);
+    // console.log("form",form);
 
 }
 
