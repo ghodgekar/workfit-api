@@ -142,10 +142,10 @@ module.exports.addDoctor = async (req, res) => {
 
                     if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
 
-                    res.send(validation)
-               
+                    resolve(validation)
+                
             } else {
-               
+                
 
                     bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
                     bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
