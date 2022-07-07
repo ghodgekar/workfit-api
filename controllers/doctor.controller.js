@@ -101,42 +101,35 @@ exports.deleteDoctor = async (req, res) => {
     }
 }
 
-module.exports.addDoctor =   async (req,res) => {
+module.exports.addDoctor =  async (req,res) => {
     let bodyObj = {}
-    var form =  await new formidable.IncomingForm();
-    console.log("i am heree");
+    var form =  new formidable.IncomingForm();
     form.parse(req);
+    
     form.on('fileBegin', function (name, file) {
         if (file.originalFilename != '' && file.originalFilename != undefined && file.originalFilename != null) {
             if (file.mimetype && file.mimetype.includes('image')) {
-
                 let ext = file.originalFilename.split('.')[1];
-                console.log("i am heree2");
                 let fileName = Date.now() + '_' + file.newFilename + '.' + ext;
                 file.filepath = path.join(__dirname, '../public/uploads/images/') + fileName;
-                console.log("i am heree3",file.filepath);
                 bodyObj[name] = "/uploads/images/" + fileName;
             }
         }
     });
-    console.log("i am heree4");
     form.on('field', function (name, value) {
         bodyObj[name] = value;
+        console.log("bodyObj",bodyObj);
     });
-    console.log("i am heree5");
     form.on('error', (err) => {
         res.send({ status: false, err: err })
     });
-    console.log("i am heree6");
 
     form.on('end', async function () {
-        console.log("i am heree7");
-        console.log(bodyObj)
+        console.log("i am heree");
         let validation = await validateAddRequest(bodyObj);
         console.log("validation",validation);
         if (!validation.status) {
             if (!res.headersSent) {
-
             if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
             if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
@@ -145,6 +138,7 @@ module.exports.addDoctor =   async (req,res) => {
             }
         }else{
             if (!res.headersSent) {
+
         bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
         bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
         let subscriptionObject = await processSubscription(bodyObj.subscription)
@@ -172,7 +166,9 @@ module.exports.addDoctor =   async (req,res) => {
             }
             res.send({ status: false, msg: "Oop's Database Issue Occured" })
         }
+
     }
+
     }
     })
 
