@@ -101,12 +101,16 @@ exports.deleteDoctor = async (req, res) => {
     }
 }
 
+// async function saveFile(){
+//     file.filepath = path.join(__dirname, '../public/uploads/images/') + fileName;
+// }
+
 module.exports.addDoctor = async (req, res) => {
     let bodyObj = {}
     var form = await new formidable.IncomingForm();
     form.parse(req);
 
-    form.on('fileBegin', function (name, file) {
+    form.on('fileBegin', async function (name, file) {
         if (file.originalFilename != '' && file.originalFilename != undefined && file.originalFilename != null) {
             if (file.mimetype && file.mimetype.includes('image')) {
                 let ext = file.originalFilename.split('.')[1];
@@ -133,15 +137,15 @@ module.exports.addDoctor = async (req, res) => {
             let validation = await validateAddRequest(bodyObj);
             console.log("validation", validation);
             if (!validation.status) {
-                if (!res.headersSent) {
+                
                     if (bodyObj.doctor_logo) await deleteFile(bodyObj.doctor_logo);
 
                     if (bodyObj.doctor_sign) await deleteFile(bodyObj.doctor_sign);
 
                     res.send(validation)
-                }
+               
             } else {
-                if (!res.headersSent) {
+               
 
                     bodyObj.doctor_password = await encrypt_decrypt.encrypt(bodyObj.doctor_password)
                     bodyObj.doctor_mobile = parseInt(bodyObj.doctor_mobile)
@@ -173,7 +177,7 @@ module.exports.addDoctor = async (req, res) => {
 
                 }
 
-            }
+            
         })
     })
 
