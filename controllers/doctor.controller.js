@@ -101,7 +101,7 @@ exports.deleteDoctor = async (req, res) => {
     }
 }
 
-module.exports.addDoctor =  async (req,res) => {
+module.exports.addDoctor =   (req,res) => {
     let bodyObj = {}
     var form =  new formidable.IncomingForm();
     console.log("i am heree");
