@@ -104,23 +104,30 @@ exports.deleteDoctor = async (req, res) => {
 module.exports.addDoctor =  async (req,res) => {
     let bodyObj = {}
     var form =  new formidable.IncomingForm();
+    console.log("i am heree");
     form.parse(req);
     form.on('fileBegin', function (name, file) {
         if (file.originalFilename != '' && file.originalFilename != undefined && file.originalFilename != null) {
             if (file.mimetype && file.mimetype.includes('image')) {
+
                 let ext = file.originalFilename.split('.')[1];
+                console.log("i am heree2");
                 let fileName = Date.now() + '_' + file.newFilename + '.' + ext;
                 file.filepath = path.join(__dirname, '../public/uploads/images/') + fileName;
+                console.log("i am heree3",file.filepath);
                 bodyObj[name] = "/uploads/images/" + fileName;
             }
         }
     });
+    console.log("i am heree4");
     form.on('field', function (name, value) {
         bodyObj[name] = value;
     });
+    console.log("i am heree5");
     form.on('error', (err) => {
         res.send({ status: false, err: err })
     });
+    console.log("i am heree6");
 
     form.on('end', async function () {
         let validation = await validateAddRequest(bodyObj);
