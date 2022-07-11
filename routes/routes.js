@@ -3,7 +3,6 @@ const router=express.Router();
 const bodyParser=require("body-parser");
 let adminController = require("../controllers/admin.controller");
 const middleware=require("../middleware")
-const doctorController = require("../controllers/doctor.controller")
 
 router.use(bodyParser.urlencoded({ extended: true }))
 router.use(bodyParser.json());

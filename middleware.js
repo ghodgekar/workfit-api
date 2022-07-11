@@ -607,10 +607,10 @@ module.exports.getPrescriptionById = async (req, res) => {
 // Prescription
 
 // Doctor
-module.exports.addDoctor =  async (req, res) => {
+module.exports.addDoctor = async (req, res) => {
     try {
         let addDoctor = await doctorController.addDoctor(req,res)
-        console.log("addDoctor",addDoctor);
+        // console.log("addDoctor",addDoctor);
         res.send(addDoctor)
     } catch (error) {
         console.log("err", error);

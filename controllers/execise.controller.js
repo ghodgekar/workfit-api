@@ -207,14 +207,15 @@ exports.exerciseByBodyArea = async (req, res) => {
             }
         }
         if (req.body_area_name) {
-            bodyAreaReq.body_area_name = req.body_area_name
+            bodyAreaReq.query.body_area_name = req.body_area_name
         }
 
         if (req.body_area_id) {
-            bodyAreaReq.body_area_id = req.body_area_id
+            bodyAreaReq.query.body_area_id = req.body_area_id
         }
+
         let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor(bodyAreaReq)
-        // console.log("body_area_id_arr",body_area_id_arr);
+        // console.log("bodyAreaByUsedForRes",bodyAreaByUsedForRes);
         let body_area_id_arr = []
         if (bodyAreaByUsedForRes.data && bodyAreaByUsedForRes.data.length) {
             body_area_id_arr = bodyAreaByUsedForRes.data[0].body_part_id_arr
@@ -236,8 +237,9 @@ exports.exerciseByBodyArea = async (req, res) => {
                         join mst_videos as vid on exe.exercise_video_id=vid.video_id
                         join mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
                     where (exe.isActive=1 OR exe.isActive=0) ${orderBy} ${limit}`;
+        console.log("query>>>>>>>>>>>>>>>>>>>>",query);
         let result = await db.executequery(query)
-        // console.log(result);
+        console.log("result>>>>>>>>>>>>>>>>>",result);
         if (result.length > 0) {
             return { status: true, data: result };
         } else {

@@ -144,7 +144,6 @@ exports.updateDoctorAdvice = async (req, res) => {
 
 exports.doctorAdviceByBodyArea = async (req, res) => {
     try {
-        console.log("doctorAdviceByBodyArea request",req);
         if (!req.body_area_id && !req.body_area_name) {
             return { status: false, msg: "Please Enter body_area_id or body_area_name" }
         }
@@ -159,12 +158,13 @@ exports.doctorAdviceByBodyArea = async (req, res) => {
                 body_area_used_for: "advice"
             }
         }
+
         if (req.body_area_name) {
-            bodyAreaReq.body_area_name = req.body_area_name
+            bodyAreaReq.query.body_area_name = req.body_area_name
         }
 
         if (req.body_area_id) {
-            bodyAreaReq.body_area_id = req.body_area_id
+            bodyAreaReq.query.body_area_id = req.body_area_id
         }
 
         let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor(bodyAreaReq)
@@ -178,7 +178,7 @@ exports.doctorAdviceByBodyArea = async (req, res) => {
         }
 
         let limit = req.limit ? 'LIMIT ' + req.limit : '';
-        let orderBy = body_area_id_arr?.length ? "ORDER BY " : ""
+        let orderBy = body_area_id_arr?.length ? " ORDER BY " : ""
         for (i = 0; i < body_area_id_arr?.length; i++) {
             orderBy += `advice_body_part_id=${body_area_id_arr[i]}, `
         }
@@ -188,9 +188,9 @@ exports.doctorAdviceByBodyArea = async (req, res) => {
             + "join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id "
             + "where "
             + condition + orderBy + limit;
-        // console.log("query", query);
+        console.log("query", query);
         let result = await db.executevaluesquery(query, values)
-        console.log(result);
+        // console.log(result);
         if (result.length > 0) {
             return { status: true, data: result };
         } else {

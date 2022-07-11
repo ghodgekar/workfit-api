@@ -1,5 +1,6 @@
 const db = require('../config/dbconnection');
 const bodyPartController = require("./bodyPart.controller")
+const common= require("../common")
 async function validateAddRequest(req) {
     if (!req.body_area_name) {
         return { status: false, msg: "required field body_area_name missing" }
@@ -156,11 +157,15 @@ exports.updateBodyArea = async (req, res) => {
     }
 }
 
+
 exports.bodyAreaByUsedFor = async (req, res) => {
     try {
-        if (!(req.query.body_area_used_for && (req.query.body_area_id || req.query.body_area_name))) {
-            return { status: false, msg: "Please Enter body_area_used_for or body_area_id" }
+        if (!(req.query.body_area_used_for)  ) {
+            return { status: false, msg: "Please Enter body_area_used_for" }
+        }else if(!req.query.body_area_id && !req.query.body_area_name){
+            return { status: false, msg: "Please Enter body_area_name or body_area_id" }
         }
+
         let limit = req.query.limit ? 'LIMIT ' + req.query.limit : '';
         let sort = '';
         if (req.query.sort) {
@@ -170,6 +175,7 @@ exports.bodyAreaByUsedFor = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY body_area_id DESC' : '';
             }
         }
+
         let condition = `(isActive=1 OR isActive=0) `
         if (req.query.body_area_used_for) {
             condition += `and body_area_used_for="${req.query.body_area_used_for}" `
@@ -178,19 +184,15 @@ exports.bodyAreaByUsedFor = async (req, res) => {
             condition += `and body_area_id=${req.query.body_area_id} `
         }
         if (req.query.body_area_name) {
-            condition += `and body_area_name=${req.query.body_area_name} `
+            condition += `and body_area_name='${req.query.body_area_name}' `
         }
-        let query = `SELECT * FROM mst_body_areas where ${condition} ${sort} ${limit}`;
-        // console.log("query",query);
+        let query = `SELECT * FROM mst_body_areas where ${condition} ${limit} ${sort}`;
+        // console.log("body Area query",query);
         let result = await db.executequery(query);
 
         // console.log("data", result);
-        let bodyPartRes = await bodyPartController.bodyPartList({query:{}})
-        let bodyPartArr = bodyPartRes.data
+        
         if (result.length > 0) {
-            for (let i = 0; i < result.length; i++) {
-                result[i].body_part_name_arr = await getBodyPartArr(result[i].body_part_id_arr,bodyPartArr)
-            }
             return { status: true, data: result };
         } else {
             return { status: true, data: [], msg: "Oop's No Body Area Found" };

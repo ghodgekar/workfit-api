@@ -1,7 +1,7 @@
 const db = require('../config/dbconnection');
 async function validateAddRequest(req) {
-    if (!req.video_iframe) {
-        return { status: false, msg: "required field video_iframe missing" }
+    if (!req.video_youtube_id) {
+        return { status: false, msg: "required field video_youtube_id missing" }
     }
     if (!req.video_name) {
         return { status: false, msg: "required field video_name missing" }
@@ -16,8 +16,8 @@ module.exports.addVideo = async (req) => {
     let validation = await validateAddRequest(req);
     if (!validation.status) return validation
 
-    let query = 'INSERT INTO mst_videos(video_iframe, video_name, video_type, isActive) VALUES (?,?,?,?)'
-    let values = [req.video_iframe, req.video_name, req.video_type, 1];
+    let query = 'INSERT INTO mst_videos(video_youtube_id, video_name, video_type, isActive) VALUES (?,?,?,?)'
+    let values = [req.video_youtube_id, req.video_name, req.video_type, 1];
     let result = await db.executevaluesquery(query, values);
     console.log("result", result);
     if (result.insertId) {
@@ -130,9 +130,9 @@ exports.updateVideo = async (req, res) => {
             cols += ` video_type= ?,`
             values.push(req.video_type)
         }
-        if (req.video_iframe) {
-            cols += ` video_iframe= ?,`
-            values.push(req.video_iframe)
+        if (req.video_youtube_id) {
+            cols += ` video_youtube_id= ?,`
+            values.push(req.video_youtube_id)
         }
         if (req.isActive || req.isActive == 0) {
             cols += ` isActive=?,`
