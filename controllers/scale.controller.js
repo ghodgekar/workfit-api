@@ -41,6 +41,10 @@ exports.scaleList = async (req, res) => {
             }
         }
 
+        if(req.query.sortBy=="app"){
+            sort = ' ORDER BY scale_name ASC ';
+        }
+
         if(req.query.callFor=="dropdown"){
             condition="scale_id as value, scale_name as label"
         }

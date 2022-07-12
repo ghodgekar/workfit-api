@@ -41,6 +41,11 @@ exports.ajunctList = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY adj.adjunct_id DESC' : '';
             }
         }
+
+        if(req.query.sortBy=="app"){
+            sort = 'ORDER BY adj.adjunct_name ASC';
+        }
+
         let query = `SELECT adj.*, ROW_NUMBER() OVER (ORDER BY adj.adjunct_id ASC) AS id, 
         inst.* FROM mst_adjuncts as adj 
         join mst_instructions as inst on adj.adjunct_instruction_id=inst.instruction_id  

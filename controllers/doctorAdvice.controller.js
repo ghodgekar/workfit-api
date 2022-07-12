@@ -72,6 +72,11 @@ exports.doctorAdviceByType = async (req, res) => {
                 sort = req.query.sort ? 'ORDER BY advice_id DESC' : '';
             }
         }
+
+        if(req.query.sortBy=="app"){
+            sort = ' ORDER BY advice_name ASC ';
+        }
+        
         let query = `SELECT adv.* FROM mst_doctor_advice as adv where (adv.isActive=1 OR adv.isActive=0) and adv.advice_type="${req.query.advice_type}" ${sort} ${limit}`;
         // console.log("query",query);
         let result = await db.executequery(query);
