@@ -178,16 +178,22 @@ exports.doctorAdviceByBodyArea = async (req, res) => {
         }
 
         let limit = req.limit ? 'LIMIT ' + req.limit : '';
-        let orderBy = body_area_id_arr?.length ? " ORDER BY " : ""
+        
+
+        let orderBy = body_area_id_arr?.length ? " ORDER BY CASE advice_body_part_id " : ""
         for (i = 0; i < body_area_id_arr?.length; i++) {
-            orderBy += `advice_body_part_id=${body_area_id_arr[i]}, `
+            orderBy += ` WHEN ${body_area_id_arr[i]} then ${i} `
         }
-        orderBy = orderBy.substring(0, orderBy.lastIndexOf(",")) + " " + orderBy.substring(orderBy.lastIndexOf(",") + 1);
+        if(body_area_id_arr?.length){
+            orderBy += ` END;`
+        }
+
+        // orderBy = orderBy.substring(0, orderBy.lastIndexOf(",")) + " " + orderBy.substring(orderBy.lastIndexOf(",") + 1);
 
         let query = "SELECT adv.*, bod.body_part_name FROM mst_doctor_advice as adv "
             + "join mst_body_part as bod on adv.advice_body_part_id=bod.body_part_id "
             + "where "
-            + condition + orderBy + limit;
+            + condition + orderBy ;
         console.log("query", query);
         let result = await db.executevaluesquery(query, values)
         // console.log(result);

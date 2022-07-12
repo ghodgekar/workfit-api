@@ -215,7 +215,7 @@ exports.exerciseByBodyArea = async (req, res) => {
         }
 
         let bodyAreaByUsedForRes = await bodyAreaController.bodyAreaByUsedFor(bodyAreaReq)
-        // console.log("bodyAreaByUsedForRes",bodyAreaByUsedForRes);
+        console.log("bodyAreaByUsedForRes",bodyAreaByUsedForRes);
         let body_area_id_arr = []
         if (bodyAreaByUsedForRes.data && bodyAreaByUsedForRes.data.length) {
             body_area_id_arr = bodyAreaByUsedForRes.data[0].body_part_id_arr
@@ -225,18 +225,23 @@ exports.exerciseByBodyArea = async (req, res) => {
         }
 
         let limit = req.limit ? 'LIMIT ' + req.limit : '';
-        let orderBy = body_area_id_arr?.length ? "ORDER BY " : ""
+        
+        let orderBy = body_area_id_arr?.length ? " ORDER BY CASE exercise_body_part_id " : ""
         for (i = 0; i < body_area_id_arr?.length; i++) {
-            orderBy += `exercise_body_part_id=${body_area_id_arr[i]}, `
+            orderBy += ` WHEN ${body_area_id_arr[i]} then ${i} `
         }
-        orderBy = orderBy.substring(0, orderBy.lastIndexOf(",")) + " " + orderBy.substring(orderBy.lastIndexOf(",") + 1);
+        if(body_area_id_arr?.length){
+            orderBy += ` END;`
+        }
+
+        // orderBy = orderBy.substring(0, orderBy.lastIndexOf(",")) + " " + orderBy.substring(orderBy.lastIndexOf(",") + 1);
 
         let query = `SELECT exe.*, inst.instruction_name,bod.body_part_name,vid.video_name 
                         FROM mst_exercises as exe 
                         join mst_instructions as inst on exe.exercise_instruction_id=inst.instruction_id
                         join mst_videos as vid on exe.exercise_video_id=vid.video_id
                         join mst_body_part as bod on exe.exercise_body_part_id=bod.body_part_id
-                    where (exe.isActive=1 OR exe.isActive=0) ${orderBy} ${limit}`;
+                    where (exe.isActive=1 OR exe.isActive=0) ${orderBy} `;
         console.log("query>>>>>>>>>>>>>>>>>>>>",query);
         let result = await db.executequery(query)
         console.log("result>>>>>>>>>>>>>>>>>",result);
