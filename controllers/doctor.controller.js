@@ -145,15 +145,15 @@ module.exports.addDoctor = async (req, res) => {
                     let subscriptionObject = await processSubscription(bodyObj.subscription)
                     let query = `INSERT INTO mst_doctors
                                 (doctor_name, doctor_username, doctor_address, doctor_email, doctor_mobile, doctor_password, doctor_degree, specialisation, doctor_logo, doctor_sign, 
-                                subscription_type, subscription_start_date, subscription_end_date, doctor_address, registration_number, consultation_charge, treatment1_charge, treatment2_charge, treatment3_charge, isActive) 
+                                subscription_type, subscription_start_date, subscription_end_date, registration_number, consultation_charge, treatment1_charge, treatment2_charge, treatment3_charge, isActive) 
                                 VALUES 
                                 (?,?,?,?,?,?,?,?,?,?,
-                                 ?,?,?,?,?,?,?,?,?,?)`;//20
+                                 ?,?,?,?,?,?,?,?,?)`;//19
 
                     let values = [
                         bodyObj.doctor_name, bodyObj.doctor_username, bodyObj.doctor_address, bodyObj.doctor_email, bodyObj.doctor_mobile, bodyObj.doctor_password, bodyObj.doctor_degree, bodyObj.specialisation, bodyObj.doctor_logo, bodyObj.doctor_sign, subscriptionObject.subscription_type,
-                        subscriptionObject.subscription_start_date, subscriptionObject.subscription_end_date, bodyObj.doctor_address, bodyObj.registration_number, parseInt(bodyObj.consultation_charge), parseInt(bodyObj.treatment1_charge), parseInt(bodyObj.treatment2_charge), parseInt(bodyObj.treatment3_charge), 1
-                    ]//20
+                        subscriptionObject.subscription_start_date, subscriptionObject.subscription_end_date, bodyObj.registration_number, parseInt(bodyObj.consultation_charge), parseInt(bodyObj.treatment1_charge), parseInt(bodyObj.treatment2_charge), parseInt(bodyObj.treatment3_charge), 1
+                    ]//19
 
                     let result = await db.executevaluesquery(query, values)
                     if (result.insertId) {
