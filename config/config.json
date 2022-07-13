@@ -10,7 +10,7 @@
     "smtp":{
         "host": "smtp.gmail.com",
         "auth": {
-            "user": "",
+            "user": "appworkfitt@gmail.com",
             "pass": "dgieappbgdxgywej"
         }
     },
