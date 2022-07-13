@@ -18,6 +18,6 @@
         "prescription_email":"email_template",
         "invoice":"invoice_template"
     },
-    "apiurl":"https://workfitt-api.herokuapp.com/",
+    "apiurl":"https://workfitt-api.herokuapp.com",
     "adminurl": "https://workfit-adminpanel.herokuapp.com/"
 }
