@@ -52,9 +52,9 @@ exports.videoList = async (req, res) => {
         }
 
         let query = `SELECT ${cols} FROM mst_videos where ${condition} ${sort} ${limit} `;
-        // console.log("query",query);
+        console.log(" video by id query>>>>>>>>>>>>>>>>>>",query);
         let result = await db.executevaluesquery(query,values);
-        console.log("data", result);
+        console.log(" video by id data", result);
         if (result.length > 0) {
             return { status: true, data: result };
         } else {

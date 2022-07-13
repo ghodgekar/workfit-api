@@ -44,6 +44,24 @@ module.exports.doctorLogin = async (req) => {
 
 }
 
+module.exports.doctorById = async (req) => {
+    try {
+        let query = `SELECT * FROM mst_doctors where doctor_Id = ? and isActive = ?`;
+        let values = [req.doctor_id, 1]
+        // console.log("query",query);
+        let result = await db.executevaluesquery(query, values);
+        // console.log("data", result);
+        if (result.length > 0) {
+            return ({ status: true, data: result[0], msg: 'Successful !!!' });
+        } else {
+            return { status: true, msg: "Oop's No Body Doctor Found" };
+        }
+    } catch (err) {
+        console.log(err);
+        return { status: false, err: err };
+    }
+}
+
 async function validateAddRequest(req) {
     // {
     //     doctor_mobile: '7208470446',

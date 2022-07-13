@@ -117,7 +117,9 @@ async function sendMail(req, prescription_id) {
 }
 
 async function getVideoObj(video_id) {
+    console.log("video_id",video_id);
     let video = await videoController.videoList({ query: video_id })
+    console.log("video",video);
 
     return video.data[0]
 }

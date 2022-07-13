@@ -628,4 +628,15 @@ module.exports.doctorLogin = async (req, res) => {
         res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
     }
 }
+
+module.exports.doctorById = async (req, res) => {
+    try {
+        let doctorById = await doctorController.doctorById(req.body,res)
+        console.log("doctorLogin");
+        res.send(doctorById)
+    } catch (error) {
+        console.log("err", error);
+        res.send({ status: false, data: error, err_msg: "Oop's Something went wrong" })
+    }
+}
 // Doctor
