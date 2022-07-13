@@ -10,8 +10,8 @@
     "smtp":{
         "host": "smtp.gmail.com",
         "auth": {
-            "user": "akshaynarkar01@gmail.com",
-            "pass": "ywbmbwoovpyivdav"
+            "user": "",
+            "pass": "dgieappbgdxgywej"
         }
     },
     "template":{

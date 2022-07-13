@@ -43,16 +43,16 @@ exports.ajunctList = async (req, res) => {
         }
 
         if(req.query.sortBy=="app"){
-            sort = 'ORDER BY adj.adjunct_name ASC';
+            sort = ' ORDER BY adj.adjunct_name ASC ';
         }
 
         let query = `SELECT adj.*, ROW_NUMBER() OVER (ORDER BY adj.adjunct_id ASC) AS id, 
         inst.* FROM mst_adjuncts as adj 
         join mst_instructions as inst on adj.adjunct_instruction_id=inst.instruction_id  
         where  ${condition} ${sort} ${limit}`;
-        // console.log("query",query);
+        console.log("ajunctList query>>>>>>>>>>",query);
         let result = await db.executevaluesquery(query,values);
-        console.log("data", result);
+        // console.log("data", result);
         if (result.length > 0) {
             return { status: true, data: result };
         } else {
