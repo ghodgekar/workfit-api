@@ -268,12 +268,11 @@ async function generateAudio(exercise, fileName) {
                 if (parseInt(exercise.exercise_holds)) {
                     text += `${j}. hold <break time="1s"/>`
                     for (let k = 1; k <= parseInt(exercise.exercise_holds); k++) {
-                        text += `${k}. <break time="0.5s"/> `
+                        text += `${k}. <break time="0.5s"/> ` 
                     }
                     text += ` relax<break time="1s"/>`
                 } else {
                     text += `${j}. <break time="0.5s"/>`
-                    
                 }
                 
             }
