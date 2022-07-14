@@ -260,16 +260,21 @@ async function generateAudio(exercise, fileName) {
                 text += `.time for next round<break time="0.5s"/>`
             }
         }
-
     } else {
         for (let i = 1; i <= parseInt(exercise.exercise_sets); i++) {
             text += `Take your position <break time="5s"/> and start in 3. 2. 1.<break time="1s"/>`
-            for (let j = 1; j <= parseInt(exercise.exercise_holds); j++) {
-                text += `${j}. hold <break time="1s"/>`
-                for (let k = 1; k <= parseInt(exercise.exercise_reps); k++) {
-                    text += `${k}. <break time="0.5s"/> `
+
+            for (let j = 1; j <= parseInt(exercise.exercise_reps); j++) {
+                if (parseInt(exercise.exercise_holds)) {
+                    text += `${j}. hold <break time="1s"/>`
+                    for (let k = 1; k <= parseInt(exercise.exercise_holds); k++) {
+                        text += `${k}. <break time="0.5s"/> `
+                    }
+                    text += ` relax<break time="1s"/>`
+                } else {
+                    text += `${j}. <break time="0.5s"/>`
                 }
-                text += ` relax<break time="1s"/>`
+                
             }
             if (parseInt(exercise.exercise_rests) > 0) {
                 text += `rest for ${exercise.exercise_rests} counts <break time="1s"/>`
