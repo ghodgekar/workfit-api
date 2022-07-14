@@ -273,6 +273,7 @@ async function generateAudio(exercise, fileName) {
                     text += ` relax<break time="1s"/>`
                 } else {
                     text += `${j}. <break time="0.5s"/>`
+                    
                 }
                 
             }
