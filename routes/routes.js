@@ -116,8 +116,8 @@ router.post("/doctorById",middleware.doctorById)
 
 let fs = require("fs")
 router.get('/termsandconditions', function (req, res) {
-  let tempFile = "Agreement.pdf";
-  fs.readFile(tempFile, function (err, data) {
+  let tempFile = "./Agreement.pdf";
+  fs.readFile(tempFile, 'utf8' , function (err, data) {
     if(err){
         console.log("termsandconditions",err)
         res.send(err)
