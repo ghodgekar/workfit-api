@@ -118,6 +118,10 @@ let fs = require("fs")
 router.get('/termsandconditions', function (req, res) {
   let tempFile = "Agreement.pdf";
   fs.readFile(tempFile, function (err, data) {
+    if(err){
+        console.log("termsandconditions",err)
+        res.send(err)
+    }
     res.contentType("application/pdf");
     res.send(data);
   });
