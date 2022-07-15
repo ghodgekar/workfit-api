@@ -242,7 +242,6 @@ async function processPatient(req) {
 }
 
 async function generateAudio(exercise, fileName) {
-
     let text = `<speak>`
     if (exercise.isTimeControlled) {
         for (let i = 1; i <= parseInt(exercise.exercise_reps); i++) {
