@@ -114,6 +114,14 @@ router.post("/doctorLogin",middleware.doctorLogin)
 router.post("/doctorById",middleware.doctorById)
 // Doctor
 
+let fs = require("fs")
+router.get('/termsandconditions', function (req, res) {
+  let tempFile = "Agreement.pdf";
+  fs.readFile(tempFile, function (err, data) {
+    res.contentType("application/pdf");
+    res.send(data);
+  });
+});
 
 
 
