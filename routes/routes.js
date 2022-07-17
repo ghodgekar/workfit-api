@@ -144,7 +144,7 @@ router.get('/workfittTnc1', (req, res) => {
   var stat = fs.statSync("./public/uploads/Agreement.pdf");
   res.setHeader('Content-Length', stat.size);
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename=Tnc.pdf');
+  res.setHeader('Content-Disposition', 'inline; filename=Tnc.pdf');
   file.pipe(res);
   })
 
