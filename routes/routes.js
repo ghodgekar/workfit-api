@@ -127,6 +127,26 @@ router.get('/termsandconditions', function (req, res) {
   });
 });
 
+router.get('/workfittTnc', (req, res) => {
+  const path = "./public/uploads/Agreement.pdf";
+  if (fs.existsSync(path)) {
+      res.contentType("application/pdf");
+      fs.createReadStream(path).pipe(res)
+  } else {
+      res.status(500)
+      console.log('File not found')
+      res.send('File not found')
+  }
+})
+
+router.get('/workfittTnc1', (req, res) => {
+  var file = fs.createReadStream("./public/uploads/Agreement.pdf");
+  var stat = fs.statSync("./public/uploads/Agreement.pdf");
+  res.setHeader('Content-Length', stat.size);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename=Tnc.pdf');
+  file.pipe(res);
+  })
 
 
 
