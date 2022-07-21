@@ -133,7 +133,7 @@ router.get('/workfittTnc', (req, res) => {
       res.contentType("application/pdf");
       fs.createReadStream(path).pipe(res)
   } else {
-    
+     
       res.status(500)
       console.log('File not found')
       res.send('File not found')
